@@ -1,0 +1,108 @@
+# EditorConfig helps maintain consistent coding styles
+# for multiple developers working on the same project
+# https://editorconfig.org
+
+root = true
+
+# All files
+[*]
+charset = utf-8
+insert_final_newline = true
+trim_trailing_whitespace = true
+end_of_line = lf
+
+# Python files
+[*.py]
+indent_style = space
+indent_size = 4
+max_line_length = 88
+
+# JavaScript/TypeScript files
+[*.{js,jsx,ts,tsx}]
+indent_style = space
+indent_size = 2
+max_line_length = 88
+
+# JSON files
+[*.json]
+indent_style = space
+indent_size = 2
+max_line_length = 100
+
+# YAML files
+[*.{yml,yaml}]
+indent_style = space
+indent_size = 2
+max_line_length = 100
+
+# Markdown files
+[*.md]
+indent_style = space
+indent_size = 2
+max_line_length = 100
+trim_trailing_whitespace = false
+
+# Shell scripts
+[*.{sh,bash}]
+indent_style = space
+indent_size = 2
+max_line_length = 100
+
+# Docker files
+[Dockerfile*]
+indent_style = space
+indent_size = 2
+
+# Environment files
+[.env*]
+indent_style = space
+indent_size = 2
+max_line_length = 200
+
+# Configuration files
+[*.{toml,ini,cfg}]
+indent_style = space
+indent_size = 2
+
+# HTML files
+[*.{html,htm}]
+indent_style = space
+indent_size = 2
+max_line_length = 120
+
+# CSS files
+[*.{css,scss,sass}]
+indent_style = space
+indent_size = 2
+max_line_length = 120
+
+# XML files
+[*.xml]
+indent_style = space
+indent_size = 2
+
+# SQL files
+[*.sql]
+indent_style = space
+indent_size = 2
+max_line_length = 120
+
+# Makefile
+[{Makefile,makefile,*.mk}]
+indent_style = tab
+indent_size = 4
+
+# Package.json and related
+[package*.json]
+indent_style = space
+indent_size = 2
+
+# Lock files - don't modify
+[{package-lock.json,yarn.lock,Pipfile.lock}]
+insert_final_newline = false
+trim_trailing_whitespace = false
+
+# Log files - don't modify
+[*.log]
+insert_final_newline = false
+trim_trailing_whitespace = false

@@ -1,0 +1,43 @@
+{
+  "id": "business-sales-proposal-001",
+  "name": "営業提案書作成",
+  "description": "効果的な営業提案書・プレゼンテーション作成用テンプレート",
+  "template": "# {product_name} 提案書\n\n## お客様情報\n- 企業名: {client_company}\n- 業界: {client_industry}\n- 課題: {client_challenges}\n- 予算規模: {budget_range}\n\n## 現状分析\n{current_situation}\n\n## ソリューション提案\n\n### {product_name}の特徴\n{product_features}\n\n### 御社への具体的メリット\n1. **{benefit_1_title}**: {benefit_1_description}\n2. **{benefit_2_title}**: {benefit_2_description}\n3. **{benefit_3_title}**: {benefit_3_description}\n\n### 実装スケジュール\n{implementation_timeline}\n\n### 投資収益率（ROI）\n- 初期投資: {initial_cost}\n- 年間削減効果: {annual_savings}\n- 回収期間: {payback_period}\n\n## 次のステップ\n{next_steps}\n\n---\n*この提案書は{company_name}が{client_company}様のために特別に作成いたしました。*",
+  "variables": [
+    "product_name",
+    "client_company",
+    "client_industry", 
+    "client_challenges",
+    "budget_range",
+    "current_situation",
+    "product_features",
+    "benefit_1_title",
+    "benefit_1_description",
+    "benefit_2_title",
+    "benefit_2_description",
+    "benefit_3_title",
+    "benefit_3_description",
+    "implementation_timeline",
+    "initial_cost",
+    "annual_savings",
+    "payback_period",
+    "next_steps",
+    "company_name"
+  ],
+  "type": "completion",
+  "category": "business",
+  "tags": ["sales", "proposal", "b2b", "presentation", "roi"],
+  "usage_count": 0,
+  "quality_score": 95.0,
+  "created_by": "system",
+  "created_at": "2025-07-26T00:00:00.000000",
+  "updated_at": "2025-07-26T00:00:00.000000",
+  "metadata": {
+    "industry": "general",
+    "skill_level": "professional",
+    "estimated_tokens": 400,
+    "languages": ["ja"],
+    "use_cases": ["sales_presentations", "client_proposals", "business_development"],
+    "optimization_goals": ["persuasion", "clarity", "professionalism"]
+  }
+}

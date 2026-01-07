@@ -1,0 +1,149 @@
+{
+  "preset_configurations": {
+    "business_professional": {
+      "name": "ビジネスプロフェッショナル",
+      "description": "企業環境でのプロフェッショナルな対応に最適化",
+      "settings": {
+        "tone": "formal",
+        "language_style": "business_japanese",
+        "response_length": "medium",
+        "detail_level": "comprehensive",
+        "examples_included": true,
+        "technical_depth": "intermediate"
+      },
+      "recommended_templates": [
+        "business-customer-service-001",
+        "business-sales-proposal-001"
+      ]
+    },
+    
+    "technical_expert": {
+      "name": "技術エキスパート",
+      "description": "技術的な精度と詳細性を重視した設定",
+      "settings": {
+        "tone": "technical",
+        "language_style": "technical_japanese",
+        "response_length": "detailed",
+        "detail_level": "expert",
+        "examples_included": true,
+        "technical_depth": "advanced",
+        "code_examples": true,
+        "references_included": true
+      },
+      "recommended_templates": [
+        "tech-code-review-001",
+        "tech-api-documentation-001",
+        "ai-yaml-context-agent-001"
+      ]
+    },
+    
+    "educational_focused": {
+      "name": "教育特化",
+      "description": "学習効果を最大化する教育向け設定",
+      "settings": {
+        "tone": "friendly",
+        "language_style": "educational_japanese", 
+        "response_length": "structured",
+        "detail_level": "progressive",
+        "examples_included": true,
+        "technical_depth": "beginner_to_intermediate",
+        "learning_objectives": true,
+        "assessment_included": true
+      },
+      "recommended_templates": [
+        "education-lesson-plan-001"
+      ]
+    },
+    
+    "productivity_optimized": {
+      "name": "生産性最適化",
+      "description": "効率性と実行可能性を重視した設定",
+      "settings": {
+        "tone": "action_oriented",
+        "language_style": "concise_japanese",
+        "response_length": "compact",
+        "detail_level": "actionable",
+        "examples_included": true,
+        "technical_depth": "practical",
+        "time_estimates": true,
+        "priority_levels": true
+      },
+      "recommended_templates": [
+        "productivity-command-stack-001"
+      ]
+    },
+    
+    "ai_development": {
+      "name": "AI開発特化",
+      "description": "AI・機械学習開発に特化した高度な設定",
+      "settings": {
+        "tone": "analytical",
+        "language_style": "technical_mixed",
+        "response_length": "comprehensive",
+        "detail_level": "expert",
+        "examples_included": true,
+        "technical_depth": "advanced",
+        "code_examples": true,
+        "architecture_diagrams": true,
+        "performance_metrics": true
+      },
+      "recommended_templates": [
+        "ai-yaml-context-agent-001",
+        "ai-multi-agent-workflow-001"
+      ]
+    }
+  },
+  
+  "dynamic_adjustments": {
+    "context_aware": {
+      "description": "文脈に応じた動的調整",
+      "triggers": {
+        "user_expertise_level": {
+          "beginner": {
+            "detail_level": "basic",
+            "technical_depth": "beginner",
+            "examples_multiplier": 2
+          },
+          "intermediate": {
+            "detail_level": "standard", 
+            "technical_depth": "intermediate",
+            "examples_multiplier": 1.5
+          },
+          "expert": {
+            "detail_level": "advanced",
+            "technical_depth": "expert",
+            "examples_multiplier": 1
+          }
+        },
+        "time_constraint": {
+          "urgent": {
+            "response_length": "compact",
+            "focus": "essential_only"
+          },
+          "normal": {
+            "response_length": "standard",
+            "focus": "comprehensive"
+          },
+          "detailed": {
+            "response_length": "extended",
+            "focus": "exhaustive"
+          }
+        }
+      }
+    }
+  },
+  
+  "quality_thresholds": {
+    "minimum_standards": {
+      "completeness": 0.8,
+      "accuracy": 0.95,
+      "relevance": 0.85,
+      "clarity": 0.9
+    },
+    "optimization_targets": {
+      "token_efficiency": 0.7,
+      "user_satisfaction": 0.9,
+      "task_completion_rate": 0.95
+    }
+  }
+}

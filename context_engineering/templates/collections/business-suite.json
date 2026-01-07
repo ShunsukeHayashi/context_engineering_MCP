@@ -1,0 +1,48 @@
+{
+  "collection_id": "business-suite-001",
+  "name": "ビジネス業務スイート",
+  "description": "企業業務に必要な主要テンプレートのコレクション",
+  "version": "1.0.0",
+  "created_at": "2025-07-26T00:00:00.000000",
+  "category": "business",
+  "templates": [
+    {
+      "template_id": "business-customer-service-001",
+      "name": "企業カスタマーサービス",
+      "role": "customer_support",
+      "priority": "high",
+      "use_frequency": "daily"
+    },
+    {
+      "template_id": "business-sales-proposal-001", 
+      "name": "営業提案書作成",
+      "role": "sales",
+      "priority": "high",
+      "use_frequency": "weekly"
+    },
+    {
+      "template_id": "productivity-command-stack-001",
+      "name": "コマンドスタック実行フレームワーク",
+      "role": "project_management",
+      "priority": "medium",
+      "use_frequency": "weekly"
+    }
+  ],
+  "workflow_integration": {
+    "typical_sequence": [
+      "business-customer-service-001",
+      "business-sales-proposal-001",
+      "productivity-command-stack-001"
+    ],
+    "parallel_usage": [
+      ["business-customer-service-001", "business-sales-proposal-001"]
+    ]
+  },
+  "metadata": {
+    "target_company_size": ["small", "medium", "large"],
+    "industries": ["general", "technology", "manufacturing", "services"],
+    "skill_level_required": "beginner_to_intermediate",
+    "estimated_roi": "high",
+    "training_required": false
+  }
+}

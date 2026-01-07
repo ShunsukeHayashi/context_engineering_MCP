@@ -79,7 +79,7 @@ fi
 
 # Activate and install dependencies
 source context_env/bin/activate
-pip install -r requirements.txt -q
+pip install -r ../requirements.txt -q
 
 # Start the API server in background
 nohup python context_api.py > ../logs/context_api.log 2>&1 &

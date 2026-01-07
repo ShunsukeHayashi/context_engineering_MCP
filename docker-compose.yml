@@ -1,0 +1,143 @@
+version: '3.8'
+
+services:
+  # ========================================
+  # AI Guides API Service
+  # ========================================
+  ai-guides-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: context-eng-ai-guides
+    ports:
+      - "8888:8888"
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - UVICORN_HOST=0.0.0.0
+      - UVICORN_PORT=8888
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - NODE_ENV=${NODE_ENV:-production}
+    volumes:
+      - ./logs:/app/logs
+    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8888"]
+    networks:
+      - context-engineering
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8888/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+
+  # ========================================
+  # Context Engineering API Service
+  # ========================================
+  context-engineering-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: context-eng-api
+    ports:
+      - "9001:9001"
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - UVICORN_HOST=0.0.0.0
+      - UVICORN_PORT=9001
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - NODE_ENV=${NODE_ENV:-production}
+      - DEFAULT_MAX_TOKENS=${DEFAULT_MAX_TOKENS:-8192}
+      - DEFAULT_OPTIMIZATION_TIMEOUT=${DEFAULT_OPTIMIZATION_TIMEOUT:-300}
+    volumes:
+      - ./logs:/app/logs
+      - ./context_engineering/templates:/app/context_engineering/templates
+    working_dir: /app/context_engineering
+    command: ["python", "context_api.py"]
+    networks:
+      - context-engineering
+    depends_on:
+      - ai-guides-api
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9001/api/stats"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+
+  # ========================================
+  # Workflow System Service
+  # ========================================
+  workflow-system:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: context-eng-workflow
+    ports:
+      - "9002:9002"
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - UVICORN_HOST=0.0.0.0
+      - UVICORN_PORT=9002
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - NODE_ENV=${NODE_ENV:-production}
+    volumes:
+      - ./logs:/app/logs
+    working_dir: /app/workflow_system
+    command: ["python", "workflow_api.py"]
+    networks:
+      - context-engineering
+    depends_on:
+      - context-engineering-api
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+
+  # ========================================
+  # MCP Server (Optional - for development)
+  # ========================================
+  mcp-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: context-eng-mcp
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+      - CONTEXT_API_URL=http://context-engineering-api:9001
+      - AI_GUIDES_API_URL=http://ai-guides-api:8888
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    working_dir: /app/mcp-server
+    command: ["node", "context_mcp_server.js"]
+    networks:
+      - context-engineering
+    depends_on:
+      - ai-guides-api
+      - context-engineering-api
+    restart: unless-stopped
+    profiles:
+      - mcp  # Only start with --profile mcp
+
+# ========================================
+# Networks
+# ========================================
+networks:
+  context-engineering:
+    driver: bridge
+    name: context-engineering-network
+
+# ========================================
+# Volumes (for data persistence)
+# ========================================
+volumes:
+  logs-data:
+    driver: local
+  templates-data:
+    driver: local

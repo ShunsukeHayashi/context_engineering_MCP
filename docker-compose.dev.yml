@@ -1,0 +1,187 @@
+version: '3.8'
+
+# Development Configuration
+# Extends the main docker-compose.yml with development-specific settings
+
+services:
+  # ========================================
+  # AI Guides API Service (Development)
+  # ========================================
+  ai-guides-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: app  # Use development stage
+    volumes:
+      - .:/app  # Live code reloading
+      - ./logs:/app/logs
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - NODE_ENV=development
+      - LOG_LEVEL=debug
+      - DEBUG=true
+      - DEVELOPMENT_MODE=true
+    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8888", "--reload"]
+    ports:
+      - "8888:8888"
+
+  # ========================================
+  # Context Engineering API Service (Development)
+  # ========================================
+  context-engineering-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: app  # Use development stage
+    volumes:
+      - .:/app  # Live code reloading
+      - ./logs:/app/logs
+      - ./context_engineering/templates:/app/context_engineering/templates
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - NODE_ENV=development
+      - LOG_LEVEL=debug
+      - DEBUG=true
+      - DEVELOPMENT_MODE=true
+    working_dir: /app/context_engineering
+    command: ["python", "context_api.py", "--reload"]
+    ports:
+      - "9001:9001"
+
+  # ========================================
+  # Workflow System Service (Development)
+  # ========================================
+  workflow-system:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: app  # Use development stage
+    volumes:
+      - .:/app  # Live code reloading
+      - ./logs:/app/logs
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - NODE_ENV=development
+      - LOG_LEVEL=debug
+      - DEBUG=true
+      - DEVELOPMENT_MODE=true
+    working_dir: /app/workflow_system
+    command: ["python", "workflow_api.py", "--reload"]
+    ports:
+      - "9002:9002"
+
+  # ========================================
+  # MCP Server (Development)
+  # ========================================
+  mcp-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: app  # Use development stage
+    volumes:
+      - .:/app  # Live code reloading
+    environment:
+      - NODE_ENV=development
+      - CONTEXT_API_URL=http://context-engineering-api:9001
+      - AI_GUIDES_API_URL=http://ai-guides-api:8888
+      - LOG_LEVEL=debug
+    working_dir: /app/mcp-server
+    command: ["node", "--inspect=0.0.0.0:9229", "context_mcp_server.js"]
+    ports:
+      - "9229:9229"  # Node.js debugger port
+
+  # ========================================
+  # Redis (for development caching)
+  # ========================================
+  redis:
+    image: redis:7-alpine
+    container_name: context-eng-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - context-engineering
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    restart: unless-stopped
+
+  # ========================================
+  # PostgreSQL (for development database)
+  # ========================================
+  postgres:
+    image: postgres:15-alpine
+    container_name: context-eng-postgres
+    environment:
+      - POSTGRES_DB=context_engineering
+      - POSTGRES_USER=dev_user
+      - POSTGRES_PASSWORD=dev_password
+    ports:
+      - "5432:5432"
+    networks:
+      - context-engineering
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: unless-stopped
+
+  # ========================================
+  # Monitoring and Observability
+  # ========================================
+  
+  # Prometheus for metrics
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: context-eng-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    networks:
+      - context-engineering
+    profiles:
+      - monitoring
+
+  # Grafana for visualization
+  grafana:
+    image: grafana/grafana:latest
+    container_name: context-eng-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml
+    networks:
+      - context-engineering
+    depends_on:
+      - prometheus
+    profiles:
+      - monitoring
+
+# ========================================
+# Additional volumes for development
+# ========================================
+volumes:
+  redis-data:
+    driver: local
+  postgres-data:
+    driver: local
+  prometheus-data:
+    driver: local
+  grafana-data:
+    driver: local
+
+# ========================================
+# Networks (inherited from main compose)
+# ========================================
+networks:
+  context-engineering:
+    external: true

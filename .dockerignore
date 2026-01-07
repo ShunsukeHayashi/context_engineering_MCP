@@ -1,0 +1,196 @@
+# Context Engineering MCP Platform - Docker Ignore File
+# Excludes unnecessary files from Docker build context
+
+# ========================================
+# Development and Testing Files
+# ========================================
+.git
+.gitignore
+.github
+.vscode
+.idea
+*.md
+!README.md
+
+# Test files
+tests/
+htmlcov/
+.coverage
+.pytest_cache/
+.tox/
+
+# Development tools
+.env.example
+.env.local
+.env.development
+*.log
+
+# ========================================
+# Python
+# ========================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv/
+context_env/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pyenv
+.python-version
+
+# ========================================
+# Node.js
+# ========================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.yarn-integrity
+
+# ========================================
+# Operating System
+# ========================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+
+# Windows
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+
+# ========================================
+# Docker
+# ========================================
+.dockerignore
+Dockerfile*
+docker-compose*.yml
+.docker/
+
+# ========================================
+# CI/CD
+# ========================================
+.github/
+.gitlab-ci.yml
+.circleci/
+.travis.yml
+Jenkinsfile
+
+# ========================================
+# Documentation
+# ========================================
+docs/
+*.md
+!README.md
+!CLAUDE.md
+
+# ========================================
+# Monitoring and Logs
+# ========================================
+logs/
+*.log
+monitoring/
+grafana-data/
+prometheus-data/
+
+# ========================================
+# Database
+# ========================================
+*.db
+*.sqlite
+*.sqlite3
+database/
+db_data/
+
+# ========================================
+# Backup Files
+# ========================================
+*.backup
+*.bak
+*.old
+backup-*/
+
+# ========================================
+# IDE and Editor Files
+# ========================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# ========================================
+# Coverage and Profiling
+# ========================================
+.coverage
+htmlcov/
+.prof
+*.prof
+
+# ========================================
+# Application Specific
+# ========================================
+# Temporary files
+tmp/
+temp/
+cache/
+
+# User data
+user_data/
+uploads/
+
+# Configuration overrides (keep base configs)
+config/local.json
+config/development.json
+config/production.json
+
+# ========================================
+# Security
+# ========================================
+*.pem
+*.key
+*.crt
+*.p12
+secrets/
+.secrets/

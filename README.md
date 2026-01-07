@@ -10,7 +10,7 @@
 
 <h3>Transform your AI development with intelligent context management, optimization, and prompt engineering</h3>
 
-[English](README_EN.md) | [日本語](README_JP.md) | [Demo](#-live-demo) | [Quick Start](#-quick-start) | [Docs](https://github.com/ShunsukeHayashi/context_-engineering_MCP/wiki)
+[Demo](#-live-demo) | [Quick Start](#-quick-start) | [Docs](https://github.com/ShunsukeHayashi/context_-engineering_MCP/wiki)
 
 <img src="https://github.com/user-attachments/assets/context-engineering-demo.gif" alt="Context Engineering Demo" width="100%" />
 

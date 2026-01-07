@@ -8,8 +8,9 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 import fetch from 'node-fetch';
 
-const CONTEXT_API_URL = process.env.CONTEXT_API_URL || 'http://localhost:9001';
+const CONTEXT_API_URL = process.env.CONTEXT_API_URL || 'http://localhost:9003';
 const AI_GUIDES_API_URL = process.env.AI_GUIDES_API_URL || 'http://localhost:8888';
+const WORKFLOW_API_URL = process.env.WORKFLOW_API_URL || 'http://localhost:9002';
 
 class ContextEngineeringMCPServer {
   constructor() {
@@ -347,6 +348,170 @@ class ContextEngineeringMCPServer {
             properties: {},
           },
         },
+        
+        // Workflow System Tools
+        {
+          name: 'create_workflow',
+          description: 'Create a new AI workflow from user input',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              user_input: {
+                type: 'string',
+                description: 'Description of the workflow to create',
+              },
+              context: {
+                type: 'object',
+                description: 'Additional context for workflow generation',
+                default: {},
+              },
+            },
+            required: ['user_input'],
+          },
+        },
+        {
+          name: 'list_workflows',
+          description: 'List all workflows in the system',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              status: {
+                type: 'string',
+                enum: ['pending', 'running', 'completed', 'failed'],
+                description: 'Filter workflows by status',
+              },
+            },
+          },
+        },
+        {
+          name: 'get_workflow',
+          description: 'Get detailed information about a specific workflow',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              workflow_id: {
+                type: 'string',
+                description: 'The workflow ID',
+              },
+            },
+            required: ['workflow_id'],
+          },
+        },
+        {
+          name: 'execute_workflow',
+          description: 'Execute a workflow',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              workflow_id: {
+                type: 'string',
+                description: 'The workflow ID to execute',
+              },
+            },
+            required: ['workflow_id'],
+          },
+        },
+        {
+          name: 'update_task_status',
+          description: 'Update the status of a workflow task',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              task_id: {
+                type: 'string',
+                description: 'The task ID',
+              },
+              status: {
+                type: 'string',
+                enum: ['pending', 'running', 'completed', 'failed'],
+                description: 'New task status',
+              },
+              result: {
+                type: 'object',
+                description: 'Task execution result',
+                default: {},
+              },
+              errors: {
+                type: 'array',
+                items: { type: 'string' },
+                description: 'Any errors encountered',
+                default: [],
+              },
+            },
+            required: ['task_id', 'status'],
+          },
+        },
+        
+        // Dynamic Template Selection Tools
+        {
+          name: 'browse_template_categories',
+          description: 'Browse available template categories and their templates',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              category: {
+                type: 'string',
+                enum: ['business', 'technical', 'education', 'ai-agents', 'productivity'],
+                description: 'Specific category to browse, or leave empty for all',
+              },
+              show_examples: {
+                type: 'boolean',
+                description: 'Include usage examples in the response',
+                default: false,
+              },
+            },
+          },
+        },
+        {
+          name: 'select_template_by_use_case',
+          description: 'Find the best template for a specific use case',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              use_case: {
+                type: 'string',
+                description: 'Description of what you want to accomplish',
+              },
+              industry: {
+                type: 'string',
+                description: 'Industry context (optional)',
+              },
+              complexity: {
+                type: 'string',
+                enum: ['simple', 'intermediate', 'complex'],
+                description: 'Complexity level of the task',
+                default: 'intermediate',
+              },
+            },
+            required: ['use_case'],
+          },
+        },
+        {
+          name: 'get_template_recommendations',
+          description: 'Get AI-powered template recommendations based on context',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              context: {
+                type: 'string',
+                description: 'Detailed description of your project or task',
+              },
+              goals: {
+                type: 'array',
+                items: { type: 'string' },
+                description: 'List of goals you want to achieve',
+                default: [],
+              },
+              constraints: {
+                type: 'array',
+                items: { type: 'string' },
+                description: 'Any constraints or limitations',
+                default: [],
+              },
+            },
+            required: ['context'],
+          },
+        },
       ],
     }));
 
@@ -603,6 +768,191 @@ class ContextEngineeringMCPServer {
                 {
                   type: 'text',
                   text: `Context Engineering System Statistics:\n\nSessions: ${result.sessions.total} total, ${result.sessions.active} active\nContext Windows: ${result.contexts.total_windows}\nElements: ${result.contexts.total_elements} (avg ${result.contexts.avg_elements_per_window.toFixed(1)} per window)\nTemplates: ${result.templates.total_templates}\nOptimization Tasks: ${result.optimization_tasks}`,
+                },
+              ],
+            };
+          }
+
+          // Workflow System Tools
+          case 'create_workflow': {
+            const result = await this.makeRequest(WORKFLOW_API_URL, '/api/workflows', {
+              method: 'POST',
+              body: JSON.stringify({
+                user_input: args.user_input,
+                context: args.context || {},
+              }),
+            });
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: `Workflow Created Successfully!\n\nWorkflow ID: ${result.workflow_id}\nStatus: ${result.status}\nGenerated Tasks: ${result.tasks.length}\n\nWorkflow Description:\n${result.description}\n\nNext Steps:\n- Use execute_workflow to start execution\n- Monitor progress with get_workflow`,
+                },
+              ],
+            };
+          }
+
+          case 'list_workflows': {
+            const params = new URLSearchParams();
+            if (args.status) params.append('status', args.status);
+            
+            const result = await this.makeRequest(WORKFLOW_API_URL, `/api/workflows?${params.toString()}`);
+            const workflowList = result.workflows.map(w => 
+              `${w.name} (ID: ${w.id})\n  Status: ${w.status} | Created: ${new Date(w.created_at).toLocaleDateString()}\n  Tasks: ${w.tasks.length} | Progress: ${Math.round((w.completed_tasks / w.tasks.length) * 100)}%`
+            ).join('\n\n');
+            
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: `Available Workflows (${result.workflows.length}):\n\n${workflowList}`,
+                },
+              ],
+            };
+          }
+
+          case 'get_workflow': {
+            const result = await this.makeRequest(WORKFLOW_API_URL, `/api/workflows/${args.workflow_id}`);
+            const taskList = result.tasks.map(t => 
+              `- ${t.name} (${t.status})\n  Type: ${t.task_type} | Priority: ${t.priority}\n  Dependencies: ${t.dependencies.join(', ') || 'None'}`
+            ).join('\n');
+            
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: `Workflow Details:\n\nName: ${result.name}\nStatus: ${result.status}\nProgress: ${Math.round((result.completed_tasks / result.tasks.length) * 100)}%\n\nDescription:\n${result.description}\n\nTasks (${result.tasks.length}):\n${taskList}`,
+                },
+              ],
+            };
+          }
+
+          case 'execute_workflow': {
+            const result = await this.makeRequest(WORKFLOW_API_URL, `/api/workflows/${args.workflow_id}/execute`, {
+              method: 'POST',
+            });
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: `Workflow Execution Started!\n\nWorkflow ID: ${args.workflow_id}\nStatus: ${result.status}\nExecution ID: ${result.execution_id}\n\nMonitor progress with get_workflow or check the dashboard.`,
+                },
+              ],
+            };
+          }
+
+          case 'update_task_status': {
+            const result = await this.makeRequest(WORKFLOW_API_URL, '/api/tasks/update', {
+              method: 'POST',
+              body: JSON.stringify({
+                task_id: args.task_id,
+                status: args.status,
+                result: args.result || {},
+                errors: args.errors || [],
+              }),
+            });
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: `Task Status Updated!\n\nTask ID: ${args.task_id}\nNew Status: ${args.status}\nWorkflow: ${result.workflow_id}\n\nTask execution ${args.status === 'completed' ? 'completed successfully' : `updated to ${args.status}`}.`,
+                },
+              ],
+            };
+          }
+
+          // Dynamic Template Selection Tools
+          case 'browse_template_categories': {
+            const params = new URLSearchParams();
+            if (args.category) params.append('category', args.category);
+            
+            const result = await this.makeRequest(CONTEXT_API_URL, `/api/templates/categories?${params.toString()}`);
+            
+            let responseText = args.category ? 
+              `Templates in Category: ${args.category}\n\n` : 
+              'All Template Categories:\n\n';
+            
+            for (const [category, templates] of Object.entries(result.categories)) {
+              responseText += `📁 ${category.toUpperCase()}\n`;
+              templates.forEach(template => {
+                responseText += `  • ${template.name} (${template.id})\n`;
+                responseText += `    Type: ${template.type} | Quality: ${template.quality_score}⭐\n`;
+                responseText += `    Use cases: ${template.metadata.use_cases?.join(', ') || 'General'}\n`;
+                if (args.show_examples && template.metadata.examples) {
+                  responseText += `    Example: ${template.metadata.examples[0]}\n`;
+                }
+                responseText += '\n';
+              });
+              responseText += '\n';
+            }
+            
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: responseText,
+                },
+              ],
+            };
+          }
+
+          case 'select_template_by_use_case': {
+            const result = await this.makeRequest(CONTEXT_API_URL, '/api/templates/recommend', {
+              method: 'POST',
+              body: JSON.stringify({
+                use_case: args.use_case,
+                industry: args.industry,
+                complexity: args.complexity,
+                selection_mode: 'use_case_match',
+              }),
+            });
+            
+            const recommendations = result.recommendations.map((rec, index) => 
+              `${index + 1}. ${rec.template.name} (Score: ${rec.score}⭐)\n` +
+              `   ID: ${rec.template.id}\n` +
+              `   Category: ${rec.template.category} | Type: ${rec.template.type}\n` +
+              `   Why recommended: ${rec.reasoning}\n` +
+              `   Variables needed: ${rec.template.variables.slice(0, 5).join(', ')}${rec.template.variables.length > 5 ? '...' : ''}`
+            ).join('\n\n');
+            
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: `Template Recommendations for: "${args.use_case}"\n\n${recommendations}\n\nUse render_template with your chosen template ID to generate content.`,
+                },
+              ],
+            };
+          }
+
+          case 'get_template_recommendations': {
+            const result = await this.makeRequest(CONTEXT_API_URL, '/api/templates/ai-recommend', {
+              method: 'POST',
+              body: JSON.stringify({
+                context: args.context,
+                goals: args.goals,
+                constraints: args.constraints,
+              }),
+            });
+            
+            const recommendations = result.recommendations.map((rec, index) => {
+              const template = rec.template;
+              return `${index + 1}. ${template.name} (${rec.confidence}% confidence)\n` +
+                `   Category: ${template.category} | Complexity: ${template.metadata.complexity || 'medium'}\n` +
+                `   Perfect for: ${rec.reasoning}\n` +
+                `   Expected outcome: ${rec.expected_outcome}\n` +
+                `   Template ID: ${template.id}`;
+            }).join('\n\n');
+            
+            const suggestedWorkflow = result.suggested_workflow ? 
+              `\n\n🔄 Suggested Workflow:\n${result.suggested_workflow.map((step, i) => `${i + 1}. ${step}`).join('\n')}` : 
+              '';
+            
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: `AI-Powered Template Recommendations\n\nContext Analysis: ${result.context_analysis}\n\n${recommendations}${suggestedWorkflow}\n\nNext steps: Choose a template and use render_template to generate your content.`,
                 },
               ],
             };

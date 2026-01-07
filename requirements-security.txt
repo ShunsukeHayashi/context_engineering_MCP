@@ -1,0 +1,31 @@
+# Security Dependencies for Context Engineering MCP Platform
+
+# Core cryptography and security
+cryptography>=41.0.0
+pyjwt>=2.8.0
+passlib[bcrypt]>=1.7.4
+python-multipart>=0.0.6
+
+# Additional security utilities
+secure>=0.3.0
+slowapi>=0.1.9  # Rate limiting for FastAPI
+python-jose[cryptography]>=3.3.0
+
+# Environment and configuration security
+python-decouple>=3.8
+keyring>=24.0.0
+
+# Logging and monitoring
+structlog>=23.0.0
+sentry-sdk[fastapi]>=1.32.0
+
+# Input validation and sanitization
+bleach>=6.0.0
+validators>=0.22.0
+
+# HTTP security
+httpx[security]>=0.25.0
+urllib3>=2.0.0
+
+# File handling security
+python-magic>=0.4.27

@@ -4,7 +4,7 @@ echo "🧠 Context Engineering システムを起動中..."
 
 # 依存関係をインストール
 echo "📦 依存関係をインストール中..."
-pip install -r requirements.txt
+pip install -r ../requirements.txt
 
 # 環境変数をチェック
 if [ -z "$GEMINI_API_KEY" ]; then
@@ -33,4 +33,4 @@ echo "   🔗 RAG統合"
 echo "   📊 リアルタイム可視化"
 echo ""
 
-python context_api.py
+python ../context_engineering/context_api.py

@@ -54,6 +54,40 @@
 
 **全工程が自律実行、人間の介入は最小限。**
 
+## プロジェクト構造
+
+```
+context_engineering_MCP/
+├── main.py                      # AI Guides API server (port 8888)
+├── gemini_service.py           # Gemini AI integration service
+├── scripts/                    # Convenience scripts for common tasks
+│   ├── quickstart.sh           # Full platform setup
+│   ├── start_context_engineering.sh  # Context Engineering system
+│   ├── run-mcp-server.sh       # MCP server startup
+│   ├── test-mcp.sh            # MCP server testing
+│   └── start_workflow_system.sh # Workflow system
+├── context_engineering/        # Context Engineering system (port 9003)
+│   ├── context_models.py       # Core data models (Pydantic/dataclass)
+│   ├── context_analyzer.py     # AI-powered context analysis
+│   ├── context_optimizer.py    # Multi-strategy optimization
+│   ├── template_manager.py     # Template CRUD and rendering
+│   ├── context_api.py          # FastAPI server
+│   └── templates/              # Stored prompt templates
+├── mcp-server/                 # MCP server implementations
+│   ├── index.js                # Basic AI guides MCP server
+│   ├── context_mcp_server.js   # Full platform MCP server (21 tools)
+│   └── package.json            # Node.js dependencies
+├── workflow_system/            # Workflow automation (experimental)
+├── .claude/                    # Claude Code設定
+│   ├── agents/                 # Agent定義
+│   ├── commands/               # カスタムコマンド
+│   └── settings.json           # Claude設定
+├── .github/
+│   └── workflows/              # GitHub Actions
+├── examples/                   # Usage examples and tutorials
+└── requirements.txt            # Unified Python dependencies
+```
+
 ## ラベル体系（識学理論準拠）
 
 ### 10カテゴリー、53ラベル
@@ -71,33 +105,78 @@
 
 ## 開発ガイドライン
 
-### TypeScript設定
+### セットアップ
 
-```json
-{
-  "compilerOptions": {
-    "strict": true,
-    "module": "ESNext",
-    "target": "ES2022"
-  }
-}
+#### Quick Start (Recommended)
+```bash
+# Use the convenience script for full setup
+./quickstart.sh
+```
+
+#### Manual Setup
+
+##### 1. AI Guides API Server (Port 8888)
+```bash
+# Install Python dependencies
+pip install -r requirements.txt
+
+# Run AI Guides server
+uvicorn main:app --host 0.0.0.0 --port 8888 --reload
+```
+
+##### 2. Context Engineering System (Port 9003)
+```bash
+cd context_engineering
+pip install -r requirements.txt
+python context_api.py
+```
+
+##### 3. MCP Server
+```bash
+cd mcp-server
+npm install
+node context_mcp_server.js
 ```
 
 ### セキュリティ
 
-- **機密情報は環境変数で管理**: `GITHUB_TOKEN`, `ANTHROPIC_API_KEY`
+- **機密情報は環境変数で管理**: `GITHUB_TOKEN`, `ANTHROPIC_API_KEY`, `GEMINI_API_KEY`
 - **.env を .gitignore に含める**
 - **Webhook検証**: HMAC-SHA256署名検証
 
 ### テスト
 
 ```bash
-npm test                    # 全テスト実行
-npm run test:watch          # Watch mode
-npm run test:coverage       # カバレッジレポート
+# Run all tests
+pytest
+
+# Run with coverage
+pytest --cov=. --cov-report=html
+
+# Test MCP server
+./test-mcp.sh
 ```
 
 目標: 80%+ カバレッジ
+
+## Architecture & Technical Decisions
+
+### Core Architecture Patterns
+1. **Multi-Service Design**: Three independent FastAPI services (AI Guides, Context Engineering, Workflow)
+2. **MCP Protocol Integration**: Native Claude Desktop support with stdio transport
+3. **Async-First Design**: All I/O operations use asyncio for high concurrency
+4. **Type Safety**: Comprehensive type hints with Pydantic models and dataclasses
+
+### Data Models Architecture
+- **ContextElement**: Basic building blocks with content, type, priority
+- **ContextWindow**: Collections of elements with token management
+- **ContextSession**: High-level groupings for project organization
+- **PromptTemplate**: Reusable components with variable substitution
+
+### AI Integration Strategy
+- **AI Provider**: Gemini 2.0 Flash for all AI operations
+- **Rate Limiting**: Built-in respect for Gemini API limits (60 RPM)
+- **Error Recovery**: Graceful degradation when AI services are unavailable
 
 ## 使用方法
 
@@ -127,22 +206,6 @@ npx miyabi status --watch  # リアルタイム監視
 /agent-run                 # Claude Code から実行
 ```
 
-## プロジェクト構造
-
-```
-context_engineering_MCP/
-├── .claude/               # Claude Code設定
-│   ├── agents/           # Agent定義
-│   ├── commands/         # カスタムコマンド
-│   └── settings.json     # Claude設定
-├── .github/
-│   └── workflows/        # 26+ GitHub Actions
-├── src/                  # ソースコード
-├── tests/                # テストコード
-├── CLAUDE.md             # このファイル
-└── package.json
-```
-
 ## カスタムスラッシュコマンド
 
 Claude Code で以下のコマンドが使用可能:
@@ -166,10 +229,13 @@ Claude Code で以下のコマンドが使用可能:
 ## 環境変数
 
 ```bash
+# Gemini API Key（必須）
+GEMINI_API_KEY=your_gemini_api_key_here
+
 # GitHub Personal Access Token（必須）
 GITHUB_TOKEN=ghp_xxxxx
 
-# Anthropic API Key（必須 - Agent実行時）
+# Anthropic API Key（Agent実行時）
 ANTHROPIC_API_KEY=sk-ant-xxxxx
 ```
 

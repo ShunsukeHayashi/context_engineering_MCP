@@ -3,8 +3,13 @@ import os
 from typing import Dict, List, Optional, Any
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Request, Depends
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
+import time
+
+from security_config import security_config, security_middleware, get_security_headers, log_security_event
 
 # Load environment variables from .env file
 load_dotenv()
@@ -78,6 +83,93 @@ app = FastAPI(
     version=APP_VERSION,
     description="A centralized repository and search interface for a curated collection of free AI-related guides from OpenAI, Google, and Anthropic. Enhanced with Gemini AI for intelligent search and analysis."
 )
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=security_config.get_cors_origins(),
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
+    allow_headers=["*"],
+)
+
+# Security middleware
+@app.middleware("http")
+async def security_middleware_handler(request: Request, call_next):
+    """Security middleware for rate limiting and security headers"""
+    start_time = time.time()
+    
+    # Get client ID for rate limiting
+    client_id = security_middleware.get_client_id(request)
+    
+    # Check rate limiting
+    if not await security_middleware.rate_limit_check(client_id):
+        log_security_event(
+            "rate_limit_exceeded",
+            {"client_id": client_id, "path": request.url.path},
+            "WARNING"
+        )
+        return JSONResponse(
+            status_code=429,
+            content={"detail": "Rate limit exceeded"},
+            headers=get_security_headers()
+        )
+    
+    # Validate request size
+    content_length = request.headers.get("content-length")
+    if content_length and int(content_length) > security_config.max_request_size:
+        log_security_event(
+            "request_size_exceeded",
+            {"client_id": client_id, "size": content_length},
+            "WARNING"
+        )
+        return JSONResponse(
+            status_code=413,
+            content={"detail": "Request too large"},
+            headers=get_security_headers()
+        )
+    
+    # Process request
+    response = await call_next(request)
+    
+    # Add security headers
+    for header, value in get_security_headers().items():
+        response.headers[header] = value
+    
+    # Log request for monitoring
+    process_time = time.time() - start_time
+    log_security_event(
+        "api_request",
+        {
+            "client_id": client_id,
+            "method": request.method,
+            "path": request.url.path,
+            "status_code": response.status_code,
+            "process_time": process_time
+        },
+        "INFO"
+    )
+    
+    return response
+
+# Authentication dependency
+async def verify_api_key(request: Request):
+    """Verify API key for protected endpoints"""
+    api_key = request.headers.get("X-API-Key")
+    if not api_key:
+        return None  # Allow public access for most endpoints
+    
+    if not security_config.validate_api_key_format(api_key):
+        log_security_event(
+            "invalid_api_key_format",
+            {"client_id": security_middleware.get_client_id(request)},
+            "WARNING"
+        )
+        raise HTTPException(status_code=401, detail="Invalid API key format")
+    
+    # In a real implementation, you would validate against a database
+    # For now, we'll accept any properly formatted key
+    return {"api_key": api_key}
 
 # --- Helper Functions ---
 

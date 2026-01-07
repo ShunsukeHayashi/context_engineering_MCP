@@ -1,0 +1,209 @@
+# Pre-commit hooks for Context Engineering MCP Platform
+# See https://pre-commit.com for more information
+
+repos:
+  # Code formatting
+  - repo: https://github.com/psf/black
+    rev: 23.7.0
+    hooks:
+      - id: black
+        language_version: python3.9
+        args: ["--line-length=88"]
+        types: [python]
+
+  # Import sorting
+  - repo: https://github.com/pycqa/isort
+    rev: 5.12.0
+    hooks:
+      - id: isort
+        args: ["--profile", "black"]
+        types: [python]
+
+  # Linting and code quality
+  - repo: https://github.com/charliermarsh/ruff-pre-commit
+    rev: v0.0.284
+    hooks:
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
+        types: [python]
+
+  # Type checking
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.5.1
+    hooks:
+      - id: mypy
+        additional_dependencies: [types-requests, types-PyYAML]
+        args: [--ignore-missing-imports]
+        types: [python]
+
+  # Security scanning
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.7.5
+    hooks:
+      - id: bandit
+        args: ["-c", "pyproject.toml"]
+        additional_dependencies: ["bandit[toml]"]
+        types: [python]
+
+  # General file formatting
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      # Remove trailing whitespace
+      - id: trailing-whitespace
+        exclude: ^.*\.(md|rst)$
+      
+      # Ensure files end with newline
+      - id: end-of-file-fixer
+        exclude: ^.*\.(json|md)$
+      
+      # Check file size
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+      
+      # Check for merge conflicts
+      - id: check-merge-conflict
+      
+      # Check YAML syntax
+      - id: check-yaml
+        args: ['--unsafe']
+      
+      # Check JSON syntax
+      - id: check-json
+      
+      # Check TOML syntax
+      - id: check-toml
+      
+      # Prevent committing to main/master
+      - id: no-commit-to-branch
+        args: ['--branch', 'main', '--branch', 'master']
+      
+      # Check for private keys
+      - id: detect-private-key
+      
+      # Check for AWS credentials
+      - id: detect-aws-credentials
+        args: ['--allow-missing-credentials']
+
+  # Documentation
+  - repo: https://github.com/pycqa/pydocstyle
+    rev: 6.3.0
+    hooks:
+      - id: pydocstyle
+        match: ^(?!tests/).*\.py$
+        args:
+          - --convention=google
+          - --add-ignore=D100,D101,D102,D103,D104,D105,D106,D107
+
+  # Notebook cleaning (if using Jupyter notebooks)
+  - repo: https://github.com/nbQA-dev/nbQA
+    rev: 1.7.0
+    hooks:
+      - id: nbqa-black
+        additional_dependencies: [black==23.7.0]
+      - id: nbqa-isort
+        additional_dependencies: [isort==5.12.0]
+      - id: nbqa-ruff
+        additional_dependencies: [ruff==0.0.284]
+
+  # JavaScript/TypeScript for MCP server
+  - repo: https://github.com/pre-commit/mirrors-eslint
+    rev: v8.44.0
+    hooks:
+      - id: eslint
+        files: \.(js|ts|jsx|tsx)$
+        types: [file]
+        additional_dependencies:
+          - eslint@8.44.0
+          - eslint-config-prettier@8.8.0
+          - eslint-plugin-prettier@5.0.0
+          - prettier@3.0.0
+        args: [--fix]
+
+  # Prettier for JavaScript/TypeScript formatting
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v3.0.0
+    hooks:
+      - id: prettier
+        files: \.(js|ts|jsx|tsx|json|yaml|yml|md)$
+        exclude: ^(package-lock\.json|yarn\.lock)$
+
+  # Shell script checking
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.9.0.5
+    hooks:
+      - id: shellcheck
+        args: [-e, SC1091, -e, SC2039]
+
+  # Dockerfile linting
+  - repo: https://github.com/hadolint/hadolint
+    rev: v2.12.0
+    hooks:
+      - id: hadolint-docker
+        args: [--ignore, DL3008, --ignore, DL3009]
+
+  # Local hooks for project-specific checks
+  - repo: local
+    hooks:
+      # Check for TODO/FIXME comments in production code
+      - id: check-todos
+        name: Check for TODO/FIXME in production code
+        entry: python scripts/check_todos.py
+        language: python
+        files: ^(?!tests/).*\.py$
+        pass_filenames: true
+        additional_dependencies: []
+      
+      # Validate environment files
+      - id: validate-env-files
+        name: Validate .env files
+        entry: python scripts/validate_env.py
+        language: python
+        files: ^\.env.*$
+        pass_filenames: true
+      
+      # Check API documentation
+      - id: check-api-docs
+        name: Check API documentation completeness
+        entry: python scripts/check_api_docs.py
+        language: python
+        files: ^.*api.*\.py$
+        pass_filenames: true
+      
+      # Security configuration check
+      - id: security-config-check
+        name: Security configuration validation
+        entry: python scripts/security_check.py
+        language: python
+        files: ^(security_config\.py|.*security.*\.py)$
+        pass_filenames: true
+
+# Global configuration
+default_language_version:
+  python: python3.9
+  node: 18.17.0
+
+# Hook execution configuration
+fail_fast: false
+default_stages: [commit, push]
+
+# Exclude patterns
+exclude: |
+  (?x)^(
+    .*\.min\.js|
+    .*\.min\.css|
+    node_modules/.*|
+    \.git/.*|
+    \.venv/.*|
+    venv/.*|
+    __pycache__/.*|
+    \.pytest_cache/.*|
+    \.mypy_cache/.*|
+    \.ruff_cache/.*|
+    htmlcov/.*|
+    \.coverage.*|
+    dist/.*|
+    build/.*|
+    *.egg-info/.*|
+    logs/.*
+  )$

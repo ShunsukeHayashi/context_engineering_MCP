@@ -1,0 +1,42 @@
+{
+  "id": "tech-code-review-001",
+  "name": "コードレビュー分析",
+  "description": "包括的なコードレビューと改善提案用テンプレート",
+  "template": "# コードレビュー: {file_name}\n\n## 基本情報\n- **言語**: {programming_language}\n- **フレームワーク**: {framework}\n- **レビュー観点**: {review_focus}\n- **重要度**: {priority_level}\n\n## コード分析\n\n```{programming_language}\n{code_snippet}\n```\n\n## レビュー結果\n\n### ✅ 良い点\n{positive_points}\n\n### ⚠️  改善提案\n\n#### コード品質\n{code_quality_issues}\n\n#### パフォーマンス\n{performance_concerns}\n\n#### セキュリティ\n{security_issues}\n\n#### 保守性\n{maintainability_suggestions}\n\n### 🔧 具体的修正案\n\n```{programming_language}\n{suggested_improvements}\n```\n\n### 📚 参考資料\n{references}\n\n## 総合評価\n- **品質スコア**: {quality_score}/10\n- **推奨アクション**: {recommended_action}\n- **優先度**: {fix_priority}\n\n---\n*レビュー実施者: {reviewer_name}*  \n*レビュー日時: {review_date}*",
+  "variables": [
+    "file_name",
+    "programming_language",
+    "framework",
+    "review_focus",
+    "priority_level",
+    "code_snippet",
+    "positive_points",
+    "code_quality_issues",
+    "performance_concerns",
+    "security_issues",
+    "maintainability_suggestions",
+    "suggested_improvements",
+    "references",
+    "quality_score",
+    "recommended_action",
+    "fix_priority",
+    "reviewer_name",
+    "review_date"
+  ],
+  "type": "completion",
+  "category": "technical",
+  "tags": ["code-review", "development", "quality-assurance", "best-practices"],
+  "usage_count": 0,
+  "quality_score": 94.0,
+  "created_by": "system",
+  "created_at": "2025-07-26T00:00:00.000000",
+  "updated_at": "2025-07-26T00:00:00.000000",
+  "metadata": {
+    "industry": "technology",
+    "skill_level": "intermediate",
+    "estimated_tokens": 450,
+    "languages": ["ja", "en"],
+    "use_cases": ["pull_requests", "code_audits", "mentoring"],
+    "optimization_goals": ["thoroughness", "constructive_feedback", "actionability"]
+  }
+}

@@ -1,0 +1,25 @@
+name: Auto Add Issues to Project
+
+# When new issues are created, automatically add them to the project board
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  add-to-project:
+    runs-on: ubuntu-latest
+    name: Add issue to project
+    steps:
+      - name: Add Issue to Project
+        uses: actions/add-to-project@v0.5.0
+        with:
+          project-url: https://github.com/users/${{ github.repository_owner }}/projects/1
+          github-token: ${{ secrets.GH_PROJECT_TOKEN }}
+
+      - name: Set Initial Status
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GH_PROJECT_TOKEN }}
+          script: |
+            // This will be implemented when custom field automation is added
+            console.log('Issue #${{ github.event.issue.number }} added to project');

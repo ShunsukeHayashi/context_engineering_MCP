@@ -1,0 +1,79 @@
+name: Webhook Event Router
+
+on:
+  issues:
+    types: [opened, labeled, closed, reopened, assigned]
+  pull_request:
+    types: [opened, closed, reopened, review_requested, ready_for_review]
+  push:
+    branches:
+      - main
+      - 'feat/**'
+      - 'fix/**'
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  route-event:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Route Issue Event
+        if: github.event_name == 'issues'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          EVENT_TYPE: ${{ github.event.action }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_LABELS: ${{ toJSON(github.event.issue.labels) }}
+        run: |
+          echo "📥 Issue Event: $EVENT_TYPE for #$ISSUE_NUMBER"
+          npx tsx scripts/webhook-router.ts issue "$EVENT_TYPE" "$ISSUE_NUMBER"
+
+      - name: Route PR Event
+        if: github.event_name == 'pull_request'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          EVENT_TYPE: ${{ github.event.action }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          echo "📥 PR Event: $EVENT_TYPE for #$PR_NUMBER"
+          npx tsx scripts/webhook-router.ts pr "$EVENT_TYPE" "$PR_NUMBER"
+
+      - name: Route Push Event
+        if: github.event_name == 'push'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH_NAME: ${{ github.ref_name }}
+          COMMIT_SHA: ${{ github.sha }}
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+        run: |
+          echo "📥 Push Event: $BRANCH_NAME @ $COMMIT_SHA"
+          npx tsx scripts/webhook-router.ts push "$BRANCH_NAME" "$COMMIT_SHA"
+
+      - name: Route Comment Event
+        if: github.event_name == 'issue_comment'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          COMMENT_BODY: ${{ github.event.comment.body }}
+          COMMENT_AUTHOR: ${{ github.event.comment.user.login }}
+        run: |
+          echo "📥 Comment Event: #$ISSUE_NUMBER by $COMMENT_AUTHOR"
+          npx tsx scripts/webhook-router.ts comment "$ISSUE_NUMBER" "$COMMENT_AUTHOR"

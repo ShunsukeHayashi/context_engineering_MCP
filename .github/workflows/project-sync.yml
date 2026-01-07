@@ -1,0 +1,21 @@
+name: Sync Issues to Project
+
+on:
+  issues:
+    types: [opened, labeled, unlabeled, closed, reopened]
+  pull_request:
+    types: [opened, closed, reopened]
+
+jobs:
+  sync-to-project:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: read
+      pull-requests: read
+
+    steps:
+      - name: Sync to GitHub Projects
+        uses: actions/add-to-project@v0.5.0
+        with:
+          project-url: https://github.com/orgs/${{ github.repository_owner }}/projects/1
+          github-token: ${{ secrets.GITHUB_TOKEN }}

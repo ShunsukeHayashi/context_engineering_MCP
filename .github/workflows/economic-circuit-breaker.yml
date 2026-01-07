@@ -1,0 +1,395 @@
+name: 🔴 Economic Circuit Breaker
+# AGENTS.md v5.0 - Economic Governance Protocol準拠
+# Reference: ai-course-content-generator economic-circuit-breaker.yml
+
+on:
+  schedule:
+    - cron: '0 * * * *'  # 1時間ごとにコスト監視
+  workflow_dispatch:
+    inputs:
+      force_check:
+        description: '強制チェック実行'
+        required: false
+        default: 'false'
+
+permissions:
+  issues: write
+  actions: write
+  contents: read
+
+jobs:
+  monitor-cloud-costs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install yq for YAML parsing
+        run: |
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+
+      - name: Load BUDGET.yml configuration
+        id: budget
+        run: |
+          BUDGET=$(yq '.monthly_budget_usd' BUDGET.yml)
+          WARNING_THRESHOLD=$(yq '.thresholds.warning' BUDGET.yml)
+          EMERGENCY_THRESHOLD=$(yq '.thresholds.emergency' BUDGET.yml)
+
+          echo "monthly_budget=$BUDGET" >> $GITHUB_OUTPUT
+          echo "warning_threshold=$WARNING_THRESHOLD" >> $GITHUB_OUTPUT
+          echo "emergency_threshold=$EMERGENCY_THRESHOLD" >> $GITHUB_OUTPUT
+
+          echo "📊 Budget Configuration:"
+          echo "  Monthly Budget: \$$BUDGET USD"
+          echo "  Warning Threshold: ${WARNING_THRESHOLD} ($(echo "$BUDGET * $WARNING_THRESHOLD" | bc)% = \$$(echo "$BUDGET * $WARNING_THRESHOLD" | bc) USD)"
+          echo "  Emergency Threshold: ${EMERGENCY_THRESHOLD} ($(echo "$EMERGENCY_THRESHOLD * 100" | bc)% = \$$(echo "$BUDGET * $EMERGENCY_THRESHOLD" | bc) USD)"
+
+      - name: Check Anthropic API Usage
+        id: anthropic_cost
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          # 現在の月の開始日を計算
+          MONTH_START=$(date -u +"%Y-%m-01T00:00:00Z")
+          CURRENT_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+          echo "📅 Billing Period: $MONTH_START ~ $CURRENT_DATE"
+
+          # Anthropic API usage check
+          # Note: Anthropic doesn't provide direct billing API yet, so we estimate from usage
+          # In production, integrate with actual billing endpoint when available
+
+          # Placeholder: 実際のAPI使用状況をチェック
+          # TODO: Anthropic Billing APIが利用可能になったら統合
+          ANTHROPIC_COST_USD=0
+
+          # Fallback: GitHub Actionsのログから推定 (開発時)
+          if [ "${{ github.event.inputs.force_check }}" == "true" ]; then
+            # デモ用: テストコスト
+            ANTHROPIC_COST_USD=45.23
+          fi
+
+          echo "anthropic_cost=$ANTHROPIC_COST_USD" >> $GITHUB_OUTPUT
+          echo "🤖 Anthropic API Cost: \$$ANTHROPIC_COST_USD USD"
+
+      - name: Check Firebase Costs
+        id: firebase_cost
+        env:
+          GOOGLE_CLOUD_PROJECT: ${{ secrets.GOOGLE_CLOUD_PROJECT }}
+          GOOGLE_APPLICATION_CREDENTIALS_JSON: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_JSON }}
+        run: |
+          # Firebase/GCP billing check via Cloud Billing API
+          # Note: Requires Cloud Billing API enabled and service account with billing.accounts.get permission
+
+          FIREBASE_COST_USD=0
+
+          # Placeholder: 実際のFirebase使用状況をチェック
+          # TODO: Cloud Billing API統合
+
+          if [ "${{ github.event.inputs.force_check }}" == "true" ]; then
+            # デモ用: テストコスト
+            FIREBASE_COST_USD=12.50
+          fi
+
+          echo "firebase_cost=$FIREBASE_COST_USD" >> $GITHUB_OUTPUT
+          echo "🔥 Firebase Cost: \$$FIREBASE_COST_USD USD"
+
+      - name: Check GitHub Actions Usage
+        id: github_cost
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # GitHub Actions分は無料枠内の想定 (3000分/月)
+          # 念のため使用量を確認
+
+          OWNER=$(echo "${{ github.repository }}" | cut -d'/' -f1)
+          REPO=$(echo "${{ github.repository }}" | cut -d'/' -f2)
+
+          # 当月のActions使用時間を取得
+          MONTH_START_UNIX=$(date -d "$(date +%Y-%m-01)" +%s)
+          CURRENT_UNIX=$(date +%s)
+
+          # GitHub API: Workflow runs (last 30 days)
+          TOTAL_MINUTES=$(gh api \
+            -H "Accept: application/vnd.github+json" \
+            "/repos/$OWNER/$REPO/actions/runs?per_page=100" \
+            --jq '[.workflow_runs[] | select(.created_at >= "'$(date -d "@$MONTH_START_UNIX" -u +%Y-%m-%dT%H:%M:%SZ)'") | .run_duration_ms // 0] | add // 0' \
+            | awk '{print int($1/60000)}')
+
+          echo "github_minutes=$TOTAL_MINUTES" >> $GITHUB_OUTPUT
+          echo "⚙️ GitHub Actions Usage: ${TOTAL_MINUTES} minutes this month"
+
+          # 無料枠3000分を超えたら警告
+          if [ "$TOTAL_MINUTES" -gt 3000 ]; then
+            echo "github_over_quota=true" >> $GITHUB_OUTPUT
+            echo "⚠️ WARNING: GitHub Actions over free tier quota!"
+          else
+            echo "github_over_quota=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Calculate Total Cost and Consumption Rate
+        id: calculate
+        run: |
+          BUDGET=${{ steps.budget.outputs.monthly_budget }}
+          WARNING=${{ steps.budget.outputs.warning_threshold }}
+          EMERGENCY=${{ steps.budget.outputs.emergency_threshold }}
+
+          ANTHROPIC=${{ steps.anthropic_cost.outputs.anthropic_cost }}
+          FIREBASE=${{ steps.firebase_cost.outputs.firebase_cost }}
+
+          # 合計コスト計算
+          TOTAL_COST=$(echo "$ANTHROPIC + $FIREBASE" | bc)
+
+          # 消費率計算
+          CONSUMPTION_RATE=$(echo "scale=4; $TOTAL_COST / $BUDGET" | bc)
+          CONSUMPTION_PERCENT=$(echo "scale=2; $CONSUMPTION_RATE * 100" | bc)
+
+          # しきい値判定
+          WARNING_AMOUNT=$(echo "$BUDGET * $WARNING" | bc)
+          EMERGENCY_AMOUNT=$(echo "$BUDGET * $EMERGENCY" | bc)
+
+          echo "total_cost=$TOTAL_COST" >> $GITHUB_OUTPUT
+          echo "consumption_rate=$CONSUMPTION_RATE" >> $GITHUB_OUTPUT
+          echo "consumption_percent=$CONSUMPTION_PERCENT" >> $GITHUB_OUTPUT
+
+          echo ""
+          echo "═══════════════════════════════════════"
+          echo "📊 ECONOMIC GOVERNANCE PROTOCOL STATUS"
+          echo "═══════════════════════════════════════"
+          echo "💰 Total Cost: \$$TOTAL_COST USD / \$$BUDGET USD"
+          echo "📈 Consumption Rate: ${CONSUMPTION_PERCENT}%"
+          echo "⚠️ Warning Level: \$$WARNING_AMOUNT USD (${WARNING})"
+          echo "🔴 Emergency Level: \$$EMERGENCY_AMOUNT USD (${EMERGENCY})"
+          echo "═══════════════════════════════════════"
+          echo ""
+
+          # しきい値チェック
+          if (( $(echo "$TOTAL_COST >= $EMERGENCY_AMOUNT" | bc -l) )); then
+            echo "status=EMERGENCY" >> $GITHUB_OUTPUT
+            echo "🚨 STATUS: EMERGENCY - Circuit Breaker will activate!"
+          elif (( $(echo "$TOTAL_COST >= $WARNING_AMOUNT" | bc -l) )); then
+            echo "status=WARNING" >> $GITHUB_OUTPUT
+            echo "⚠️ STATUS: WARNING - Approaching budget limit"
+          else
+            echo "status=OK" >> $GITHUB_OUTPUT
+            echo "✅ STATUS: OK - Within budget"
+          fi
+
+      - name: Store Cost Metrics
+        run: |
+          # メトリクスディレクトリ作成
+          mkdir -p .ai/metrics/cost-history
+
+          # 現在の日時
+          TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          DATE=$(date -u +"%Y-%m-%d")
+
+          # メトリクスをJSONで保存
+          cat > ".ai/metrics/cost-history/${DATE}_$(date +%s).json" << EOF
+          {
+            "timestamp": "$TIMESTAMP",
+            "budget": {
+              "monthly_usd": ${{ steps.budget.outputs.monthly_budget }},
+              "warning_threshold": ${{ steps.budget.outputs.warning_threshold }},
+              "emergency_threshold": ${{ steps.budget.outputs.emergency_threshold }}
+            },
+            "costs": {
+              "anthropic_usd": ${{ steps.anthropic_cost.outputs.anthropic_cost }},
+              "firebase_usd": ${{ steps.firebase_cost.outputs.firebase_cost }},
+              "total_usd": ${{ steps.calculate.outputs.total_cost }}
+            },
+            "consumption": {
+              "rate": ${{ steps.calculate.outputs.consumption_rate }},
+              "percent": ${{ steps.calculate.outputs.consumption_percent }}
+            },
+            "github_actions": {
+              "minutes_used": ${{ steps.github_cost.outputs.github_minutes }},
+              "over_quota": ${{ steps.github_cost.outputs.github_over_quota }}
+            },
+            "status": "${{ steps.calculate.outputs.status }}"
+          }
+          EOF
+
+          echo "📝 Cost metrics saved to .ai/metrics/cost-history/"
+
+      - name: 🔴 EMERGENCY - Trigger Circuit Breaker
+        if: steps.calculate.outputs.status == 'EMERGENCY'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "🚨🚨🚨 ECONOMIC CIRCUIT BREAKER ACTIVATED 🚨🚨🚨"
+          echo ""
+          echo "Consumption rate has exceeded emergency threshold."
+          echo "Initiating automatic workflow disablement..."
+          echo ""
+
+          # BUDGET.ymlから停止対象ワークフローを読み込み
+          WORKFLOWS_TO_DISABLE=$(yq '.emergency_actions.disable_workflows[]' BUDGET.yml)
+
+          # 各ワークフローを無効化
+          for workflow in $WORKFLOWS_TO_DISABLE; do
+            echo "🛑 Disabling workflow: $workflow"
+
+            gh api \
+              --method PUT \
+              -H "Accept: application/vnd.github+json" \
+              "/repos/${{ github.repository }}/actions/workflows/$workflow/disable" \
+              && echo "✅ Disabled: $workflow" \
+              || echo "⚠️ Failed to disable: $workflow (may not exist)"
+          done
+
+          echo ""
+          echo "✅ Circuit Breaker activation complete"
+          echo "🤖 Creating emergency issue for Guardian intervention..."
+
+      - name: 🚨 Create Emergency Issue
+        if: steps.calculate.outputs.status == 'EMERGENCY'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Guardianへの通知Issue作成
+          gh issue create \
+            --title "🔴🚨 ECONOMIC CIRCUIT BREAKER ACTIVATED - Guardian Intervention Required" \
+            --label "🔥Sev.1-Critical,🤖AI-システム,💰経済-緊急停止" \
+            --assignee "${{ github.repository_owner }}" \
+            --body "$(cat <<'EOF'
+          ## 🚨 ECONOMIC CIRCUIT BREAKER ACTIVATED
+
+          **AGENTS.md v5.0 - Economic Governance Protocol** に基づき、経済的サーキットブレーカーが作動しました。
+
+          ### 📊 Cost Summary
+
+          - **Total Cost**: \$${{ steps.calculate.outputs.total_cost }} USD
+          - **Monthly Budget**: \$${{ steps.budget.outputs.monthly_budget }} USD
+          - **Consumption Rate**: ${{ steps.calculate.outputs.consumption_percent }}%
+          - **Emergency Threshold**: ${{ steps.budget.outputs.emergency_threshold }} (150%)
+
+          ### 💰 Cost Breakdown
+
+          | Service | Cost (USD) | Budget (USD) |
+          |---------|-----------|--------------|
+          | Anthropic API | \$${{ steps.anthropic_cost.outputs.anthropic_cost }} | \$400 |
+          | Firebase | \$${{ steps.firebase_cost.outputs.firebase_cost }} | \$100 |
+          | **Total** | **\$${{ steps.calculate.outputs.total_cost }}** | **\$${{ steps.budget.outputs.monthly_budget }}** |
+
+          ### 🛑 Actions Taken
+
+          The following workflows have been **automatically disabled**:
+
+          $(yq '.emergency_actions.disable_workflows[]' BUDGET.yml | sed 's/^/- ❌ /')
+
+          ### 🤖 Guardian Intervention Required
+
+          **我々の自律性は経済的限界に達した。**
+
+          **AGENTS.md v5.0 - § 4.7.6: Recovery Protocol** に従い、Guardian (@${{ github.repository_owner }}) の承認を要請する。
+
+          #### ✅ Recovery Checklist
+
+          Guardian は以下を確認し、承認してください:
+
+          - [ ] **根本原因特定完了**: なぜ予算を超過したか?
+            - [ ] 異常なAPI使用パターンの有無
+            - [ ] バグによる無限ループの有無
+            - [ ] 想定外のワークフロー実行の有無
+          - [ ] **BUDGET.yml更新完了**: 月次予算の見直しは必要か?
+            - [ ] 新しい予算額の決定
+            - [ ] しきい値の再調整
+          - [ ] **不要リソース削除完了**: コスト削減措置の実施
+            - [ ] 不要なワークフロー実行の停止
+            - [ ] キャッシュのクリーンアップ
+            - [ ] リソースの最適化
+          - [ ] **月次予算見直し完了**: 来月以降の予算計画
+
+          #### 🔄 Workflow Re-enablement
+
+          Guardian承認後、以下のコマンドでワークフローを再開:
+
+          \`\`\`bash
+          # 各ワークフローを手動で再有効化
+          gh api --method PUT /repos/${{ github.repository }}/actions/workflows/agent-runner.yml/enable
+          gh api --method PUT /repos/${{ github.repository }}/actions/workflows/continuous-improvement.yml/enable
+          gh api --method PUT /repos/${{ github.repository }}/actions/workflows/agent-onboarding.yml/enable
+          \`\`\`
+
+          ### 📈 Historical Cost Data
+
+          過去のコストメトリクスは `.ai/metrics/cost-history/` に保存されています。
+
+          ---
+
+          **Generated by**: Economic Circuit Breaker Workflow
+          **Timestamp**: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          **Workflow Run**: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          EOF
+          )"
+
+          echo "✅ Emergency issue created successfully"
+
+      - name: ⚠️ Post Warning Comment
+        if: steps.calculate.outputs.status == 'WARNING'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # 既存の警告Issueを検索
+          EXISTING_ISSUE=$(gh issue list \
+            --label "💰経済-警告" \
+            --state open \
+            --json number \
+            --jq '.[0].number')
+
+          if [ -z "$EXISTING_ISSUE" ]; then
+            # 警告Issueが存在しない場合は作成
+            gh issue create \
+              --title "⚠️ Economic Warning - Approaching Budget Limit (${{ steps.calculate.outputs.consumption_percent }}%)" \
+              --label "⚠️重要度-高,🤖AI-システム,💰経済-警告" \
+              --body "$(cat <<'EOF'
+          ## ⚠️ Economic Warning
+
+          現在のコスト消費率が警告しきい値に達しました。
+
+          ### 📊 Current Status
+
+          - **Consumption Rate**: ${{ steps.calculate.outputs.consumption_percent }}%
+          - **Total Cost**: \$${{ steps.calculate.outputs.total_cost }} USD / \$${{ steps.budget.outputs.monthly_budget }} USD
+          - **Warning Threshold**: ${{ steps.budget.outputs.warning_threshold }} (80%)
+          - **Emergency Threshold**: ${{ steps.budget.outputs.emergency_threshold }} (150%)
+
+          ### 🎯 Recommended Actions
+
+          1. Review recent workflow executions
+          2. Check for any unusual API usage patterns
+          3. Consider optimizing agent prompts to reduce token usage
+          4. Monitor cost progression closely
+
+          ---
+          **Note**: この警告Issueは経済的緊急事態に達するまで更新され続けます。
+          EOF
+          )"
+          else
+            # 既存のIssueにコメント追加
+            gh issue comment "$EXISTING_ISSUE" --body "$(cat <<'EOF'
+          ## 📊 Cost Update - $(date -u +"%Y-%m-%d %H:%M UTC")
+
+          - **Consumption Rate**: ${{ steps.calculate.outputs.consumption_percent }}%
+          - **Total Cost**: \$${{ steps.calculate.outputs.total_cost }} USD
+
+          現在も警告レベルを超えています。コスト監視を継続中...
+          EOF
+          )"
+          fi
+
+      - name: ✅ Post Success Status
+        if: steps.calculate.outputs.status == 'OK'
+        run: |
+          echo "✅ System operating within budget"
+          echo "📊 Consumption: ${{ steps.calculate.outputs.consumption_percent }}%"
+          echo "💚 All systems normal"

@@ -1,184 +1,186 @@
-# CLAUDE.md
+# context_engineering_MCP - Claude Code Context
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+## プロジェクト概要
 
-## Project Overview
+**context_engineering_MCP** - Miyabiフレームワークで構築された自律型開発プロジェクト
 
-Context Engineering MCP Platform - AI-powered context management for AI applications with:
+このプロジェクトは識学理論(Shikigaku Theory)とAI Agentsを組み合わせた自律型開発環境で運用されています。
 
-- **AI Guides API** (port 8888): Curated guides from OpenAI, Google, Anthropic with Gemini-powered search
-- **Context Engineering API** (port 9001): Context lifecycle management with analysis, optimization, templates
-- **MCP Server**: Native Claude Desktop integration with 15 tools
-- **Workflow System** (port 9000): AI-driven workflow generation and task management
+## 🌸 Miyabi Framework
 
-## Architecture
+### 7つの自律エージェント
 
-```
-├── main.py                      # AI Guides FastAPI server (port 8888)
-├── gemini_service.py            # Gemini AI integration
-├── context_engineering/         # Context Engineering system (port 9001)
-│   ├── context_api.py           # FastAPI server with WebSocket
-│   ├── context_models.py        # ContextWindow, ContextElement, ContextSession, PromptTemplate
-│   ├── context_analyzer.py      # AI-powered analysis (quality scoring, semantic analysis)
-│   ├── context_optimizer.py     # Multi-goal optimization (token reduction, clarity, relevance)
-│   └── template_manager.py      # Template CRUD, AI generation, rendering
-├── mcp-server/
-│   ├── index.js                 # Basic AI guides MCP server
-│   └── context_mcp_server.js    # Full platform MCP server (15 tools)
-├── workflow_system/             # Workflow management (port 9000)
-│   ├── workflow_api.py          # API + WebSocket + dashboard
-│   ├── workflow_generator.py    # Gemini-powered workflow generation
-│   └── agent_manager.py         # Task assignment and load balancing
-└── operations/                  # Operational scripts
-    └── miyabi-ops.sh            # Miyabi autonomous development wrapper
-```
+1. **CoordinatorAgent** - タスク統括・並列実行制御
+   - DAG（Directed Acyclic Graph）ベースのタスク分解
+   - Critical Path特定と並列実行最適化
 
-## Commands
+2. **IssueAgent** - Issue分析・ラベル管理
+   - 識学理論65ラベル体系による自動分類
+   - タスク複雑度推定（小/中/大/特大）
 
-### Quick Start
-```bash
-./quickstart.sh                  # Interactive setup, starts all services
-```
+3. **CodeGenAgent** - AI駆動コード生成
+   - Claude Sonnet 4による高品質コード生成
+   - TypeScript strict mode完全対応
 
-### Miyabi (Autonomous Development)
-```bash
-npm run miyabi:doctor            # Health check (run first)
-npm run miyabi:run               # Start autonomous development
-npm run miyabi:status            # Check status
+4. **ReviewAgent** - コード品質判定
+   - 静的解析・セキュリティスキャン
+   - 品質スコアリング（100点満点、80点以上で合格）
 
-# Or via operations script
-./operations/miyabi-ops.sh run
-./operations/miyabi-ops.sh doctor
-```
+5. **PRAgent** - Pull Request自動作成
+   - Conventional Commits準拠
+   - Draft PR自動生成
 
-### AI Guides API (port 8888)
-```bash
-pip install -r requirements.txt
-uvicorn main:app --host 0.0.0.0 --port 8888 --reload
-```
+6. **DeploymentAgent** - CI/CDデプロイ自動化
+   - 自動デプロイ・ヘルスチェック
+   - 自動Rollback機能
 
-### Context Engineering API (port 9001)
-```bash
-cd context_engineering
-python -m venv context_env && source context_env/bin/activate
-pip install -r requirements.txt
-python context_api.py
-# Or: ./start_context_engineering.sh
-```
+7. **TestAgent** - テスト自動実行
+   - テスト実行・カバレッジレポート
+   - 80%+カバレッジ目標
 
-### MCP Server
-```bash
-cd mcp-server
-npm install
-node context_mcp_server.js       # Runs via stdio for Claude Desktop
-```
+## GitHub OS Integration
 
-### Workflow System (port 9000)
-```bash
-cd workflow_system
-pip install -r requirements.txt
-./start_workflow_system.sh
-```
+このプロジェクトは「GitHubをOSとして扱う」設計思想で構築されています:
 
-### Docker
-```bash
-docker build -t context-engineering-platform .
-docker-compose up -d
-docker-compose logs -f
-```
+### 自動化されたワークフロー
 
-### Stop Services
-```bash
-./stop.sh                        # Created by quickstart.sh
-```
+1. **Issue作成** → IssueAgentが自動ラベル分類
+2. **CoordinatorAgent** → タスクをDAG分解、並列実行プラン作成
+3. **CodeGenAgent** → コード実装、テスト生成
+4. **ReviewAgent** → 品質チェック（80点以上で次へ）
+5. **TestAgent** → テスト実行（カバレッジ確認）
+6. **PRAgent** → Draft PR作成
+7. **DeploymentAgent** → マージ後に自動デプロイ
 
-## Environment Variables
+**全工程が自律実行、人間の介入は最小限。**
 
-**Required:**
-- `GEMINI_API_KEY` - Google Gemini API key
-- `GITHUB_TOKEN` - GitHub token for Miyabi (or use `gh auth login`)
+## ラベル体系（識学理論準拠）
 
-**Optional:**
-- `CONTEXT_API_URL` - Context API URL for MCP (default: http://localhost:9001)
-- `AI_GUIDES_API_URL` - Guides API URL for MCP (default: http://localhost:8888)
+### 10カテゴリー、53ラベル
 
-## MCP Configuration
+- **type:** bug, feature, refactor, docs, test, chore, security
+- **priority:** P0-Critical, P1-High, P2-Medium, P3-Low
+- **state:** pending, analyzing, implementing, reviewing, testing, deploying, done
+- **agent:** codegen, review, deployment, test, coordinator, issue, pr
+- **complexity:** small, medium, large, xlarge
+- **phase:** planning, design, implementation, testing, deployment
+- **impact:** breaking, major, minor, patch
+- **category:** frontend, backend, infra, dx, security
+- **effort:** 1h, 4h, 1d, 3d, 1w, 2w
+- **blocked:** waiting-review, waiting-deployment, waiting-feedback
 
-Add to Claude Desktop config (`~/Library/Application Support/Claude/claude_desktop_config.json`):
+## 開発ガイドライン
+
+### TypeScript設定
+
 ```json
 {
-  "mcpServers": {
-    "context-engineering": {
-      "command": "node",
-      "args": ["/absolute/path/to/mcp-server/context_mcp_server.js"]
-    }
+  "compilerOptions": {
+    "strict": true,
+    "module": "ESNext",
+    "target": "ES2022"
   }
 }
 ```
 
-## Key APIs
+### セキュリティ
 
-### AI Guides (8888)
-- `GET /health` - Health check
-- `GET /guides` - List all guides
-- `GET /guides/search?query=` - Keyword search
-- `POST /guides/search/gemini` - Semantic search with Gemini
-- `GET /guides/{title}/analyze` - AI-powered guide analysis
+- **機密情報は環境変数で管理**: `GITHUB_TOKEN`, `ANTHROPIC_API_KEY`
+- **.env を .gitignore に含める**
+- **Webhook検証**: HMAC-SHA256署名検証
 
-### Context Engineering (9001)
-- `POST /api/sessions` - Create session
-- `POST /api/sessions/{id}/windows` - Create context window
-- `POST /api/contexts/{window_id}/elements` - Add element
-- `POST /api/contexts/{window_id}/analyze` - Analyze context quality
-- `POST /api/contexts/{window_id}/optimize` - Optimize with goals
-- `POST /api/contexts/{window_id}/auto-optimize` - AI-driven optimization
-- `POST /api/templates` - Create template
-- `POST /api/templates/generate` - AI-generate template
-- `GET /api/stats` - System statistics
-- `WS /ws` - WebSocket for real-time updates
+### テスト
 
-### Workflow System (9000)
-- `POST /api/workflows` - Create workflow from user input
-- `POST /api/workflows/{id}/start` - Execute workflow
-- `POST /api/tasks/{id}/decompose` - AI task decomposition
-- `GET /api/dashboard/stats` - Dashboard statistics
+```bash
+npm test                    # 全テスト実行
+npm run test:watch          # Watch mode
+npm run test:coverage       # カバレッジレポート
+```
 
-## MCP Tools (15 total)
+目標: 80%+ カバレッジ
 
-**AI Guides (4):** `list_ai_guides`, `search_ai_guides`, `search_guides_with_gemini`, `analyze_guide`
+## 使用方法
 
-**Context Engineering (7):** `create_context_session`, `create_context_window`, `add_context_element`, `analyze_context`, `optimize_context`, `auto_optimize_context`, `get_context_stats`
+### Issue作成（Claude Code推奨）
 
-**Templates (4):** `create_prompt_template`, `generate_prompt_template`, `list_prompt_templates`, `render_template`
+```bash
+# Claude Code から直接実行
+gh issue create --title "機能追加: ユーザー認証" --body "JWT認証を実装"
+```
 
-## Key Data Models
+または Claude Code のスラッシュコマンド:
 
-**ContextWindow:** Token-limited container with elements, quality metrics
-- `max_tokens`: Default 8192
-- `reserved_tokens`: Default 512 (for response)
-- `utilization_ratio`: Current usage percentage
+```
+/create-issue
+```
 
-**ContextElement:** Individual context item
-- `type`: system | user | assistant | function | tool | multimodal
-- `priority`: 1-10 (higher = more important)
-- `tags`: For filtering/organization
+### 状態確認
 
-**PromptTemplate:** Reusable prompt with variables
-- `type`: completion | chat | instruct | fewshot | chain_of_thought | roleplay
-- Variables extracted from `{variable_name}` patterns
+```bash
+npx miyabi status          # 現在の状態
+npx miyabi status --watch  # リアルタイム監視
+```
 
-## Tech Stack
+### Agent実行
 
-- **Python:** FastAPI, Pydantic, google-generativeai, uvicorn, websockets
-- **Node.js:** @modelcontextprotocol/sdk, node-fetch (ESM, Node 18+)
-- **AI:** Gemini 2.0 Flash for all AI operations
-- **Real-time:** WebSocket for dashboard updates
-- **Operations:** Miyabi for autonomous development
+```bash
+/agent-run                 # Claude Code から実行
+```
 
-## Notes
+## プロジェクト構造
 
-- Context windows have token limits; elements are rejected if limit exceeded
-- Optimization tasks run async; poll `/api/optimization/{task_id}` for status
-- MCP server uses stdio transport (no HTTP)
-- All Python code uses async/await patterns
-- Sessions and templates stored in-memory (no persistence)
+```
+context_engineering_MCP/
+├── .claude/               # Claude Code設定
+│   ├── agents/           # Agent定義
+│   ├── commands/         # カスタムコマンド
+│   └── settings.json     # Claude設定
+├── .github/
+│   └── workflows/        # 26+ GitHub Actions
+├── src/                  # ソースコード
+├── tests/                # テストコード
+├── CLAUDE.md             # このファイル
+└── package.json
+```
+
+## カスタムスラッシュコマンド
+
+Claude Code で以下のコマンドが使用可能:
+
+- `/test` - プロジェクト全体のテストを実行
+- `/generate-docs` - コードからドキュメント自動生成
+- `/create-issue` - Agent実行用Issueを対話的に作成
+- `/deploy` - デプロイ実行
+- `/verify` - システム動作確認（環境・コンパイル・テスト）
+- `/security-scan` - セキュリティ脆弱性スキャン実行
+- `/agent-run` - Autonomous Agent実行（Issue自動処理パイプライン）
+
+## 識学理論（Shikigaku Theory）5原則
+
+1. **責任の明確化** - 各AgentがIssueに対する責任を負う
+2. **権限の委譲** - Agentは自律的に判断・実行可能
+3. **階層の設計** - CoordinatorAgent → 各専門Agent
+4. **結果の評価** - 品質スコア、カバレッジ、実行時間で評価
+5. **曖昧性の排除** - DAGによる依存関係明示、状態ラベルで進捗可視化
+
+## 環境変数
+
+```bash
+# GitHub Personal Access Token（必須）
+GITHUB_TOKEN=ghp_xxxxx
+
+# Anthropic API Key（必須 - Agent実行時）
+ANTHROPIC_API_KEY=sk-ant-xxxxx
+```
+
+## サポート
+
+- **Framework**: [Miyabi](https://github.com/ShunsukeHayashi/Autonomous-Operations)
+- **Documentation**: README.md
+- **Issues**: GitHub Issues で管理
+
+---
+
+🌸 **Miyabi** - Beauty in Autonomous Development
+
+*このファイルは Claude Code が自動的に参照します。プロジェクトの変更に応じて更新してください。*

@@ -1,0 +1,61 @@
+{
+  "mcpServers": {
+    "ide-integration": {
+      "command": "node",
+      "args": [
+        ".claude/mcp-servers/ide-integration.js"
+      ],
+      "disabled": false,
+      "description": "VS Code diagnostics and Jupyter execution integration"
+    },
+    "github-enhanced": {
+      "command": "node",
+      "args": [
+        ".claude/mcp-servers/github-enhanced.js"
+      ],
+      "env": {
+        "GITHUB_TOKEN": "${GITHUB_TOKEN}",
+        "REPOSITORY": "${REPOSITORY}"
+      },
+      "disabled": false,
+      "description": "Enhanced GitHub operations for Issue/PR management"
+    },
+    "project-context": {
+      "command": "node",
+      "args": [
+        ".claude/mcp-servers/project-context.js"
+      ],
+      "disabled": false,
+      "description": "Project-specific context and dependency information"
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "."
+      ],
+      "disabled": false,
+      "description": "Filesystem access for project files"
+    },
+    "context-engineering": {
+      "command": "node",
+      "args": [
+        "external/context-engineering-mcp/mcp-server/index.js"
+      ],
+      "env": {
+        "AI_GUIDES_API_URL": "http://localhost:8888"
+      },
+      "disabled": false,
+      "description": "Context Engineering - AI-powered context analysis, optimization, and semantic search"
+    },
+    "miyabi": {
+      "command": "node",
+      "args": [
+        ".claude/mcp-servers/miyabi-integration.js"
+      ],
+      "disabled": false,
+      "description": "Miyabi CLI統合 - プロジェクト作成、Agent実行、自動化機能"
+    }
+  }
+}

@@ -1,0 +1,91 @@
+name: Update Project Status
+
+# Update project status based on PR state
+on:
+  pull_request:
+    types: [opened, closed, reopened]
+  issues:
+    types: [closed, reopened]
+
+jobs:
+  update-status:
+    runs-on: ubuntu-latest
+    name: Update project item status
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Update Project Status
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PROJECT_TOKEN }}
+          ISSUE_NUMBER: ${{ github.event.issue.number || github.event.pull_request.number }}
+          EVENT_ACTION: ${{ github.event.action }}
+        run: |
+          cat > update-status.ts << 'EOF'
+          import { ProjectsV2Client } from './agents/github/projects-v2.js';
+
+          async function main() {
+            const token = process.env.GITHUB_TOKEN!;
+            const issueNumber = parseInt(process.env.ISSUE_NUMBER!);
+            const action = process.env.EVENT_ACTION!;
+
+            const [owner, repo] = process.env.GITHUB_REPOSITORY!.split('/');
+
+            const client = new ProjectsV2Client(token, {
+              owner,
+              repo,
+              projectNumber: 1, // Adjust as needed
+            });
+
+            await client.initialize();
+
+            // Get issue node ID
+            const issueNodeId = await client.getIssueNodeId(issueNumber);
+
+            // Add to project if not already added
+            let itemId: string;
+            try {
+              itemId = await client.addIssueToProject(issueNodeId);
+              console.log(`Added issue #${issueNumber} to project`);
+            } catch (error: any) {
+              if (error.message.includes('already exists')) {
+                console.log(`Issue #${issueNumber} already in project`);
+                // Get existing item ID (simplified - in production, fetch from GraphQL)
+                return;
+              }
+              throw error;
+            }
+
+            // Update status based on action
+            let status: string;
+            switch (action) {
+              case 'opened':
+                status = 'Todo';
+                break;
+              case 'closed':
+                status = 'Done';
+                break;
+              case 'reopened':
+                status = 'In Progress';
+                break;
+              default:
+                console.log(`Unknown action: ${action}`);
+                return;
+            }
+
+            await client.updateStatus(itemId, status);
+            console.log(`Updated issue #${issueNumber} status to: ${status}`);
+          }
+
+          main().catch(console.error);
+          EOF
+
+          npx tsx update-status.ts

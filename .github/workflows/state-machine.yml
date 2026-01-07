@@ -1,0 +1,306 @@
+name: 🔄 State Machine Automation
+
+# Automatically manage Issue/PR state based on labels
+# Constitutional requirement: "Labels are the OS's state management"
+
+on:
+  issues:
+    types: [opened, labeled, unlabeled, assigned, closed, reopened]
+  pull_request:
+    types: [opened, labeled, unlabeled, closed, reopened, ready_for_review]
+  issue_comment:
+    types: [created]
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  # ==========================================================================
+  # 1. Initial Triage - New Issues
+  # ==========================================================================
+
+  initial-triage:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'issues' && github.event.action == 'opened'
+    name: Initial Triage
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Set initial state to pending
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_OWNER: ${{ github.repository_owner }}
+          GITHUB_REPO: ${{ github.event.repository.name }}
+        run: |
+          npm run state:transition -- \
+            --issue=${{ github.event.issue.number }} \
+            --to=pending \
+            --reason="New issue created, awaiting triage"
+
+      - name: Auto-assign priority
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const labels = context.payload.issue.labels.map(l => l.name);
+            let priority = '📊 priority:P2-Medium';
+
+            // Check for priority indicators in title/body
+            const title = context.payload.issue.title.toLowerCase();
+            const body = (context.payload.issue.body || '').toLowerCase();
+
+            if (title.includes('critical') || body.includes('production down') || body.includes('security')) {
+              priority = '🔥 priority:P0-Critical';
+            } else if (title.includes('urgent') || title.includes('bug') || body.includes('broken')) {
+              priority = '⚠️ priority:P1-High';
+            } else if (title.includes('enhancement') || title.includes('feature')) {
+              priority = '📊 priority:P2-Medium';
+            }
+
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.name,
+              issue_number: context.payload.issue.number,
+              labels: [priority]
+            });
+
+  # ==========================================================================
+  # 2. Coordinator Assignment - Trigger Analysis
+  # ==========================================================================
+
+  coordinator-assignment:
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'issues' &&
+      github.event.action == 'labeled' &&
+      contains(github.event.label.name, 'agent:coordinator')
+    name: Coordinator Assignment
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Transition to analyzing
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_OWNER: ${{ github.repository_owner }}
+          GITHUB_REPO: ${{ github.event.repository.name }}
+        run: |
+          npm run state:transition -- \
+            --issue=${{ github.event.issue.number }} \
+            --to=analyzing \
+            --reason="CoordinatorAgent assigned, starting analysis"
+
+  # ==========================================================================
+  # 3. Specialist Assignment - Start Implementation
+  # ==========================================================================
+
+  specialist-assignment:
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'issues' &&
+      github.event.action == 'labeled' &&
+      (contains(github.event.label.name, 'agent:codegen') ||
+       contains(github.event.label.name, 'agent:issue') ||
+       contains(github.event.label.name, 'agent:pr'))
+    name: Specialist Assignment
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Transition to implementing
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_OWNER: ${{ github.repository_owner }}
+          GITHUB_REPO: ${{ github.event.repository.name }}
+        run: |
+          npm run state:transition -- \
+            --issue=${{ github.event.issue.number }} \
+            --to=implementing \
+            --reason="Specialist agent assigned, starting implementation"
+
+  # ==========================================================================
+  # 4. PR Created - Start Review
+  # ==========================================================================
+
+  pr-created:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && github.event.action == 'opened'
+    name: PR Created - Start Review
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Find linked issue
+        id: find-issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = context.payload.pull_request.body || '';
+            const match = body.match(/#(\d+)/);
+            if (match) {
+              return match[1];
+            }
+            return null;
+          result-encoding: string
+
+      - name: Transition linked issue to reviewing
+        if: steps.find-issue.outputs.result != 'null'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_OWNER: ${{ github.repository_owner }}
+          GITHUB_REPO: ${{ github.event.repository.name }}
+        run: |
+          npm run state:transition -- \
+            --issue=${{ steps.find-issue.outputs.result }} \
+            --to=reviewing \
+            --reason="PR #${{ github.event.pull_request.number }} created"
+
+      - name: Add review agent label to PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.name,
+              issue_number: context.payload.pull_request.number,
+              labels: ['🤖 agent:review', '👀 state:reviewing']
+            });
+
+  # ==========================================================================
+  # 5. PR Merged - Mark as Done
+  # ==========================================================================
+
+  pr-merged:
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'pull_request' &&
+      github.event.action == 'closed' &&
+      github.event.pull_request.merged == true
+    name: PR Merged - Mark Done
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Find linked issue
+        id: find-issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = context.payload.pull_request.body || '';
+            const match = body.match(/#(\d+)/);
+            if (match) {
+              return match[1];
+            }
+            return null;
+          result-encoding: string
+
+      - name: Transition linked issue to done
+        if: steps.find-issue.outputs.result != 'null'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_OWNER: ${{ github.repository_owner }}
+          GITHUB_REPO: ${{ github.event.repository.name }}
+        run: |
+          npm run state:transition -- \
+            --issue=${{ steps.find-issue.outputs.result }} \
+            --to=done \
+            --reason="PR #${{ github.event.pull_request.number }} merged successfully"
+
+  # ==========================================================================
+  # 6. Blocked Label - Escalate
+  # ==========================================================================
+
+  blocked-escalation:
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'issues' &&
+      github.event.action == 'labeled' &&
+      contains(github.event.label.name, 'state:blocked')
+    name: Blocked - Escalate
+
+    steps:
+      - name: Create escalation comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.name,
+              issue_number: context.payload.issue.number,
+              body: `🚨 **BLOCKED - Guardian Escalation**
+
+              This issue has been marked as blocked and requires Guardian intervention.
+
+              @${{ github.repository_owner }} - Please review and resolve.
+
+              **Next Steps**:
+              1. Review blocker reason
+              2. Resolve dependencies or technical issues
+              3. Remove \`🔴 state:blocked\` label when ready
+              4. Add appropriate state label to resume
+
+              ---
+              *Automated by [State Machine](../.github/workflows/state-machine.yml)*`
+            });
+
+      - name: Add severity label
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.name,
+              issue_number: context.payload.issue.number,
+              labels: ['⚠️ severity:Sev.2-High']
+            });

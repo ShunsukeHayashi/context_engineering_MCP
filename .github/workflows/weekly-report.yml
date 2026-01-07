@@ -1,0 +1,46 @@
+name: 📊 Generate Weekly Report
+
+# Automatically generate weekly reports from GitHub Projects V2
+# Issue #5 Phase A: Data Persistence Layer
+
+on:
+  schedule:
+    # Run every Monday at 9:00 AM UTC (6:00 PM JST)
+    - cron: '0 9 * * 1'
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  generate-report:
+    runs-on: ubuntu-latest
+    name: Generate Weekly Agent Report
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate weekly report
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_OWNER: ${{ github.repository_owner }}
+          GITHUB_REPO: ${{ github.event.repository.name }}
+          PROJECT_NUMBER: 1
+        run: npm run report:weekly:issue
+
+      - name: Log completion
+        run: |
+          echo "✅ Weekly report generated"
+          echo "   Repository: ${{ github.repository }}"
+          echo "   Timestamp: $(date -u +%Y-%m-%dT%H:%M:%SZ)"

@@ -1,0 +1,48 @@
+name: 🏷️ Sync Labels to GitHub
+
+# Synchronize label definitions from .github/labels.yml to GitHub
+# Ensures all automation labels are available and consistent
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/labels.yml'
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+jobs:
+  sync-labels:
+    runs-on: ubuntu-latest
+    name: Sync Labels
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Sync labels
+        uses: micnncim/action-label-syncer@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          manifest: .github/labels.yml
+          prune: false  # Don't delete existing labels not in manifest
+
+      - name: Log completion
+        run: |
+          echo "✅ Labels synchronized successfully"
+          echo "   Repository: ${{ github.repository }}"
+          echo "   Total categories: 10"
+          echo "   - State Labels (8)"
+          echo "   - Agent Assignment (6)"
+          echo "   - Priority (4)"
+          echo "   - Type (7)"
+          echo "   - Severity (4)"
+          echo "   - Phase (5)"
+          echo "   - Special Operations (7)"
+          echo "   - Automated Triggers (4)"
+          echo "   - Quality (4)"
+          echo "   - Community (4)"

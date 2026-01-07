@@ -1,0 +1,45 @@
+{
+  "name": "context-engineering-mcp",
+  "version": "2.0.0",
+  "description": "Context Engineering MCP Platform - AI-powered context management for AI applications",
+  "type": "module",
+  "scripts": {
+    "miyabi": "miyabi",
+    "miyabi:run": "miyabi run",
+    "miyabi:status": "miyabi status",
+    "miyabi:doctor": "miyabi doctor",
+    "start": "./quickstart.sh",
+    "start:api": "cd context_engineering && python context_api.py",
+    "start:guides": "uvicorn main:app --host 0.0.0.0 --port 8888 --reload",
+    "start:mcp": "node mcp-server/context_mcp_server.js",
+    "start:workflow": "cd workflow_system && python workflow_api.py",
+    "docker:build": "docker build -t context-engineering-platform .",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ShunsukeHayashi/context_engineering_MCP.git"
+  },
+  "keywords": [
+    "context-engineering",
+    "mcp",
+    "ai",
+    "gemini",
+    "prompt-engineering",
+    "llm"
+  ],
+  "author": "Shunsuke Hayashi",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ShunsukeHayashi/context_engineering_MCP/issues"
+  },
+  "homepage": "https://github.com/ShunsukeHayashi/context_engineering_MCP#readme",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "miyabi": "^0.19.0"
+  }
+}

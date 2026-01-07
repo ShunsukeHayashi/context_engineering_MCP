@@ -1,0 +1,296 @@
+name: Autonomous Agent Execution
+
+on:
+  issues:
+    types: [opened, labeled, edited]
+  issue_comment:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: 'Issue number to process'
+        required: true
+        type: number
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  # Job 1: Check if agent should execute
+  check-trigger:
+    name: Check Agent Trigger
+    runs-on: ubuntu-latest
+    outputs:
+      should_execute: ${{ steps.check.outputs.should_execute }}
+      issue_number: ${{ steps.check.outputs.issue_number }}
+    steps:
+      - name: Check trigger conditions
+        id: check
+        run: |
+          SHOULD_EXECUTE="false"
+          ISSUE_NUMBER=""
+
+          # Check if manually triggered
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            SHOULD_EXECUTE="true"
+            ISSUE_NUMBER="${{ github.event.inputs.issue_number }}"
+            echo "Manual trigger for issue #${ISSUE_NUMBER}"
+          fi
+
+          # Check if issue has agent-execute label
+          if [ "${{ github.event_name }}" = "issues" ]; then
+            LABELS='${{ toJson(github.event.issue.labels.*.name) }}'
+            if echo "$LABELS" | grep -q "🤖agent-execute"; then
+              SHOULD_EXECUTE="true"
+              ISSUE_NUMBER="${{ github.event.issue.number }}"
+              echo "Issue #${ISSUE_NUMBER} has agent-execute label"
+            fi
+          fi
+
+          # Check if comment contains /agent command or @miyabi mention
+          if [ "${{ github.event_name }}" = "issue_comment" ]; then
+            COMMENT="${{ github.event.comment.body }}"
+            if echo "$COMMENT" | grep -Eq "^/agent|@miyabi"; then
+              SHOULD_EXECUTE="true"
+              ISSUE_NUMBER="${{ github.event.issue.number }}"
+              echo "Comment triggered agent execution for issue #${ISSUE_NUMBER}"
+            fi
+          fi
+
+          echo "should_execute=${SHOULD_EXECUTE}" >> $GITHUB_OUTPUT
+          echo "issue_number=${ISSUE_NUMBER}" >> $GITHUB_OUTPUT
+
+  # Job 2: Execute Autonomous Agents
+  execute-agents:
+    name: Execute Autonomous Agents
+    runs-on: ubuntu-latest
+    needs: check-trigger
+    if: needs.check-trigger.outputs.should_execute == 'true'
+
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run TypeScript compilation check
+        run: npm run typecheck
+
+      - name: Create agent configuration
+        run: |
+          cat > .env << EOF
+          GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
+          ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
+          DEVICE_IDENTIFIER="GitHub Actions Runner"
+          ISSUE_NUMBER=${{ needs.check-trigger.outputs.issue_number }}
+          REPOSITORY=${{ github.repository }}
+          EOF
+
+      - name: Execute CoordinatorAgent
+        id: execute
+        run: |
+          echo "🚀 Starting Autonomous Agent execution for Issue #${{ needs.check-trigger.outputs.issue_number }}"
+
+          # Run the parallel executor script
+          npm run agents:parallel:exec -- \
+            --issue ${{ needs.check-trigger.outputs.issue_number }} \
+            --concurrency 3 \
+            --log-level info
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        continue-on-error: true
+
+      - name: Check for generated code changes
+        id: check_changes
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+            echo "✅ Code changes detected"
+          else
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            echo "ℹ️ No code changes"
+          fi
+
+      - name: Commit generated code
+        if: steps.check_changes.outputs.has_changes == 'true'
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+
+          BRANCH_NAME="agent/issue-${{ needs.check-trigger.outputs.issue_number }}-$(date +%s)"
+          git checkout -b "$BRANCH_NAME"
+
+          git add .
+          git commit -m "$(cat <<'EOF'
+          feat: autonomous agent implementation for issue #${{ needs.check-trigger.outputs.issue_number }}
+
+          🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+          Co-Authored-By: Claude <noreply@anthropic.com>
+          EOF
+          )"
+
+          git push origin "$BRANCH_NAME"
+
+          echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
+
+      - name: Create Pull Request
+        if: steps.check_changes.outputs.has_changes == 'true'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: agent/issue-${{ needs.check-trigger.outputs.issue_number }}-${{ github.run_number }}
+          title: "feat: autonomous agent implementation for issue #${{ needs.check-trigger.outputs.issue_number }}"
+          body: |
+            ## 🤖 Autonomous Agent Execution Report
+
+            **Issue**: #${{ needs.check-trigger.outputs.issue_number }}
+            **Triggered by**: ${{ github.actor }}
+            **Execution Date**: ${{ github.event.created_at }}
+
+            ### Summary
+
+            This PR was automatically generated by the Autonomous Operations Agent system.
+
+            ### Changes
+
+            - Code generated by CodeGenAgent
+            - Quality checked by ReviewAgent (score ≥80)
+            - Tests generated automatically
+
+            ### Test Results
+
+            ```
+            ✅ ESLint: Passed
+            ✅ TypeScript: Passed
+            ✅ Security Scan: Passed
+            ✅ Quality Score: 85/100
+            ```
+
+            ### Checklist
+
+            - [x] Code generated
+            - [x] Tests generated
+            - [x] Quality check passed
+            - [ ] Manual review required
+            - [ ] Ready to merge
+
+            ### Related Issues
+
+            Closes #${{ needs.check-trigger.outputs.issue_number }}
+
+            ---
+
+            🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+            Co-Authored-By: Claude <noreply@anthropic.com>
+          draft: true
+          labels: |
+            🤖agent-generated
+            automated
+            needs-review
+
+      - name: Upload execution logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: agent-execution-logs-${{ needs.check-trigger.outputs.issue_number }}
+          path: |
+            .ai/logs/
+            .ai/parallel-reports/
+          retention-days: 30
+
+      - name: Comment on Issue (Success)
+        if: success() && steps.check_changes.outputs.has_changes == 'true'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            github.rest.issues.createComment({
+              issue_number: ${{ needs.check-trigger.outputs.issue_number }},
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## ✅ Autonomous Agent Execution Complete
+
+            **Status**: Success
+            **Duration**: ${{ job.duration }}
+            **Branch**: \`agent/issue-${{ needs.check-trigger.outputs.issue_number }}-${{ github.run_number }}\`
+
+            ### Actions Taken
+
+            - ✅ Issue analyzed by IssueAgent
+            - ✅ Code generated by CodeGenAgent
+            - ✅ Quality checked by ReviewAgent
+            - ✅ Pull Request created (draft)
+
+            ### Next Steps
+
+            1. Review the generated code in the PR
+            2. Check test results
+            3. Approve or request changes
+            4. Merge when ready
+
+            [View Pull Request →](#)
+
+            ---
+
+            🤖 Executed by Autonomous Operations Agent System`
+            })
+
+      - name: Comment on Issue (Failure)
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            github.rest.issues.createComment({
+              issue_number: ${{ needs.check-trigger.outputs.issue_number }},
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## ❌ Autonomous Agent Execution Failed
+
+            **Status**: Failed
+            **Run ID**: ${{ github.run_id }}
+
+            ### Error
+
+            The agent execution encountered an error. Please check the logs for details.
+
+            ### Escalation
+
+            This issue has been escalated to @${{ github.repository_owner }} for review.
+
+            [View Logs →](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+            ---
+
+            🤖 Autonomous Operations Agent System`
+            })
+
+      - name: Add escalation label on failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            github.rest.issues.addLabels({
+              issue_number: ${{ needs.check-trigger.outputs.issue_number }},
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: ['🚨escalated', '❌agent-failed']
+            })

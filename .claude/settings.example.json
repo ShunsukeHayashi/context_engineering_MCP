@@ -1,0 +1,58 @@
+{
+  "projectContext": "Autonomous Operations Platform - AI-driven autonomous development system",
+  "workingDirectory": "/Users/shunsuke/Dev/Autonomous-Operations",
+  "preferredStyle": {
+    "language": "TypeScript",
+    "typeMode": "strict",
+    "commitMessage": "conventional",
+    "documentation": "JSDoc",
+    "testing": "Vitest"
+  },
+  "agents": {
+    "coordinator": "agents/coordinator/coordinator-agent.ts",
+    "codegen": "agents/codegen/codegen-agent.ts",
+    "review": "agents/review/review-agent.ts",
+    "issue": "agents/issue/issue-agent.ts",
+    "pr": "agents/pr/pr-agent.ts",
+    "deployment": "agents/deployment/deployment-agent.ts"
+  },
+  "qualityThreshold": {
+    "minScore": 80,
+    "testCoverage": 80,
+    "typeScriptErrors": 0,
+    "eslintErrors": 0
+  },
+  "escalation": {
+    "techLead": "TechLeadのGitHubユーザー名",
+    "po": "POのGitHubユーザー名",
+    "ciso": "CISOのGitHubユーザー名",
+    "cto": "CTOのGitHubユーザー名"
+  },
+  "hooks": {
+    "userPromptSubmit": ".claude/hooks/log-commands.sh",
+    "beforeEdit": null,
+    "afterEdit": null
+  },
+  "logging": {
+    "directory": ".ai/logs",
+    "format": "LDD",
+    "level": "info"
+  },
+  "commands": {
+    "/test": ".claude/commands/test.md",
+    "/agent-run": ".claude/commands/agent-run.md",
+    "/verify": ".claude/commands/verify.md",
+    "/deploy": ".claude/commands/deploy.md"
+  },
+  "shikigaku": {
+    "principles": [
+      "責任と権限の明確化",
+      "結果重視",
+      "階層の明確化",
+      "誤解・錯覚の排除",
+      "感情的判断の排除"
+    ],
+    "labels": 65,
+    "hierarchy": "Human → Coordinator → Specialist"
+  }
+}

@@ -1,17 +1,60 @@
-# CLAUDE.md
+# context_engineering_MCP - Claude Code Context
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+## プロジェクト概要
 
-## Project Overview
+**context_engineering_MCP** - Miyabiフレームワークで構築された自律型開発プロジェクト
 
-Context Engineering MCP Platform - A comprehensive AI-powered platform that transforms context management for AI applications. Originally an AI guides server, it has evolved into a complete Context Engineering system with:
+このプロジェクトは識学理論(Shikigaku Theory)とAI Agentsを組み合わせた自律型開発環境で運用されています。
 
-- **AI Guides Management**: Curated collection from OpenAI, Google, and Anthropic with Gemini-powered search
-- **Context Engineering**: Complete context lifecycle management with analysis, optimization, and templates
-- **MCP Integration**: Native Claude Desktop support with 15 powerful tools
-- **Real-time Dashboards**: WebSocket-powered visualization and monitoring
+## 🌸 Miyabi Framework
 
-## System Architecture
+### 7つの自律エージェント
+
+1. **CoordinatorAgent** - タスク統括・並列実行制御
+   - DAG（Directed Acyclic Graph）ベースのタスク分解
+   - Critical Path特定と並列実行最適化
+
+2. **IssueAgent** - Issue分析・ラベル管理
+   - 識学理論65ラベル体系による自動分類
+   - タスク複雑度推定（小/中/大/特大）
+
+3. **CodeGenAgent** - AI駆動コード生成
+   - Claude Sonnet 4による高品質コード生成
+   - TypeScript strict mode完全対応
+
+4. **ReviewAgent** - コード品質判定
+   - 静的解析・セキュリティスキャン
+   - 品質スコアリング（100点満点、80点以上で合格）
+
+5. **PRAgent** - Pull Request自動作成
+   - Conventional Commits準拠
+   - Draft PR自動生成
+
+6. **DeploymentAgent** - CI/CDデプロイ自動化
+   - 自動デプロイ・ヘルスチェック
+   - 自動Rollback機能
+
+7. **TestAgent** - テスト自動実行
+   - テスト実行・カバレッジレポート
+   - 80%+カバレッジ目標
+
+## GitHub OS Integration
+
+このプロジェクトは「GitHubをOSとして扱う」設計思想で構築されています:
+
+### 自動化されたワークフロー
+
+1. **Issue作成** → IssueAgentが自動ラベル分類
+2. **CoordinatorAgent** → タスクをDAG分解、並列実行プラン作成
+3. **CodeGenAgent** → コード実装、テスト生成
+4. **ReviewAgent** → 品質チェック（80点以上で次へ）
+5. **TestAgent** → テスト実行（カバレッジ確認）
+6. **PRAgent** → Draft PR作成
+7. **DeploymentAgent** → マージ後に自動デプロイ
+
+**全工程が自律実行、人間の介入は最小限。**
+
+## プロジェクト構造
 
 ```
 context_engineering_MCP/
@@ -23,7 +66,7 @@ context_engineering_MCP/
 │   ├── run-mcp-server.sh       # MCP server startup
 │   ├── test-mcp.sh            # MCP server testing
 │   └── start_workflow_system.sh # Workflow system
-├── context_engineering/        # Context Engineering system (port 9001)
+├── context_engineering/        # Context Engineering system (port 9003)
 │   ├── context_models.py       # Core data models (Pydantic/dataclass)
 │   ├── context_analyzer.py     # AI-powered context analysis
 │   ├── context_optimizer.py    # Multi-strategy optimization
@@ -32,32 +75,42 @@ context_engineering_MCP/
 │   └── templates/              # Stored prompt templates
 ├── mcp-server/                 # MCP server implementations
 │   ├── index.js                # Basic AI guides MCP server
-│   ├── context_mcp_server.js   # Full platform MCP server (15 tools)
+│   ├── context_mcp_server.js   # Full platform MCP server (21 tools)
 │   └── package.json            # Node.js dependencies
 ├── workflow_system/            # Workflow automation (experimental)
+├── .claude/                    # Claude Code設定
+│   ├── agents/                 # Agent定義
+│   ├── commands/               # カスタムコマンド
+│   └── settings.json           # Claude設定
+├── .github/
+│   └── workflows/              # GitHub Actions
 ├── examples/                   # Usage examples and tutorials
 └── requirements.txt            # Unified Python dependencies
 ```
 
-## Commands and Development Workflow
+## ラベル体系（識学理論準拠）
 
-### Initial Setup
-```bash
-# Clone repository
-git clone https://github.com/ShunsukeHayashi/context_-engineering_MCP.git
-cd context_engineering_MCP
+### 10カテゴリー、53ラベル
 
-# Configure environment
-cp .env.example .env
-# Edit .env to add GEMINI_API_KEY
-```
+- **type:** bug, feature, refactor, docs, test, chore, security
+- **priority:** P0-Critical, P1-High, P2-Medium, P3-Low
+- **state:** pending, analyzing, implementing, reviewing, testing, deploying, done
+- **agent:** codegen, review, deployment, test, coordinator, issue, pr
+- **complexity:** small, medium, large, xlarge
+- **phase:** planning, design, implementation, testing, deployment
+- **impact:** breaking, major, minor, patch
+- **category:** frontend, backend, infra, dx, security
+- **effort:** 1h, 4h, 1d, 3d, 1w, 2w
+- **blocked:** waiting-review, waiting-deployment, waiting-feedback
 
-### Running the Platform
+## 開発ガイドライン
+
+### セットアップ
 
 #### Quick Start (Recommended)
 ```bash
 # Use the convenience script for full setup
-./scripts/quickstart.sh
+./quickstart.sh
 ```
 
 #### Manual Setup
@@ -71,36 +124,28 @@ pip install -r requirements.txt
 uvicorn main:app --host 0.0.0.0 --port 8888 --reload
 ```
 
-##### 2. Context Engineering System (Port 9001)
+##### 2. Context Engineering System (Port 9003)
 ```bash
-# Use the setup script
-./scripts/start_context_engineering.sh
-
-# Or run manually
 cd context_engineering
-python -m venv context_env
-source context_env/bin/activate  # Windows: context_env\Scripts\activate
-pip install -r ../requirements.txt
+pip install -r requirements.txt
 python context_api.py
 ```
 
 ##### 3. MCP Server
 ```bash
-# Use the MCP server script
-./scripts/run-mcp-server.sh
-
-# Or run manually
 cd mcp-server
 npm install
 node context_mcp_server.js
 ```
 
-##### 4. Workflow System (Optional, Port varies)
-```bash
-./scripts/start_workflow_system.sh
-```
+### セキュリティ
 
-### Testing
+- **機密情報は環境変数で管理**: `GITHUB_TOKEN`, `ANTHROPIC_API_KEY`, `GEMINI_API_KEY`
+- **.env を .gitignore に含める**
+- **Webhook検証**: HMAC-SHA256署名検証
+
+### テスト
+
 ```bash
 # Run all tests
 pytest
@@ -108,106 +153,11 @@ pytest
 # Run with coverage
 pytest --cov=. --cov-report=html
 
-# Run specific test file
-pytest tests/test_context_analyzer.py -v
-
 # Test MCP server
-./scripts/test-mcp.sh
+./test-mcp.sh
 ```
 
-### Linting and Formatting
-```bash
-# Python formatting
-black .
-isort .
-
-# Python linting
-ruff check .
-
-# Node.js (MCP server)
-cd mcp-server
-npm run lint
-```
-
-### Docker Operations
-```bash
-# Build image
-docker build -t context-engineering-platform .
-
-# Run with docker-compose
-docker-compose up -d
-
-# View logs
-docker-compose logs -f
-
-# Stop
-docker-compose down
-```
-
-## API Endpoints Reference
-
-### AI Guides API (Port 8888)
-
-#### Basic Endpoints
-- `GET /health` - Health check
-- `GET /guides` - List all guides
-- `GET /guides/search?query={keyword}` - Search guides
-- `GET /guides/{title}` - Get guide details
-- `GET /guides/{title}/download-url` - Get download URL
-
-#### Gemini-Enhanced Endpoints
-- `POST /guides/search/gemini` - Semantic search
-- `GET /guides/{title}/analyze` - Analyze guide
-- `POST /guides/analyze-url` - Analyze external URL
-- `POST /guides/compare` - Compare multiple guides
-
-### Context Engineering API (Port 9001)
-
-#### Session Management
-- `POST /api/sessions` - Create session
-- `GET /api/sessions` - List sessions
-- `GET /api/sessions/{session_id}` - Get session
-
-#### Context Windows
-- `POST /api/sessions/{session_id}/windows` - Create window
-- `POST /api/contexts/{window_id}/elements` - Add element
-- `GET /api/contexts/{window_id}` - Get window
-- `POST /api/contexts/{window_id}/analyze` - Analyze context
-
-#### Optimization
-- `POST /api/contexts/{window_id}/optimize` - Optimize context
-- `POST /api/contexts/{window_id}/auto-optimize` - Auto-optimize
-- `GET /api/optimization/{task_id}` - Get task status
-
-#### Templates
-- `POST /api/templates` - Create template
-- `POST /api/templates/generate` - AI generate template
-- `GET /api/templates` - List templates
-- `POST /api/templates/{template_id}/render` - Render template
-
-#### System
-- `GET /api/stats` - System statistics
-- `WS /ws` - WebSocket connection
-
-## MCP Tools (15 Available)
-
-### Configuration
-Add to Claude Desktop config:
-```json
-{
-  "mcpServers": {
-    "context-engineering": {
-      "command": "node",
-      "args": ["/path/to/mcp-server/context_mcp_server.js"]
-    }
-  }
-}
-```
-
-### Available Tools
-1. **AI Guides Tools** (4): list, search, semantic search, analyze
-2. **Context Tools** (7): sessions, windows, elements, analysis, optimization
-3. **Template Tools** (4): create, generate, list, render
+目標: 80%+ カバレッジ
 
 ## Architecture & Technical Decisions
 
@@ -216,264 +166,87 @@ Add to Claude Desktop config:
 2. **MCP Protocol Integration**: Native Claude Desktop support with stdio transport
 3. **Async-First Design**: All I/O operations use asyncio for high concurrency
 4. **Type Safety**: Comprehensive type hints with Pydantic models and dataclasses
-5. **WebSocket Real-time**: Live updates for context optimization progress
 
 ### Data Models Architecture
-The system uses a layered data model approach:
 - **ContextElement**: Basic building blocks with content, type, priority
 - **ContextWindow**: Collections of elements with token management
 - **ContextSession**: High-level groupings for project organization
 - **PromptTemplate**: Reusable components with variable substitution
-- **OptimizationTask**: Async task tracking for long-running operations
 
 ### AI Integration Strategy
-- **Single AI Provider**: Gemini 2.0 Flash for all AI operations (analysis, optimization, generation)
-- **Prompt Engineering**: Specialized prompts for different analysis types
+- **AI Provider**: Gemini 2.0 Flash for all AI operations
 - **Rate Limiting**: Built-in respect for Gemini API limits (60 RPM)
 - **Error Recovery**: Graceful degradation when AI services are unavailable
 
-### Optimization Engine Design
-Multi-strategy optimization with measurable goals:
-- **Token Reduction**: Remove redundancy while preserving meaning
-- **Clarity Enhancement**: Improve instruction precision
-- **Relevance Boosting**: Prioritize important information
-- **Structure Improvement**: Logical flow optimization
+## 使用方法
 
-## Prompt Engineering Architecture
+### Issue作成（Claude Code推奨）
 
-### Template System Design
-The platform uses a sophisticated template management system with the following hierarchy:
-
-#### Template Types (PromptTemplateType Enum)
-- **COMPLETION**: Basic completion prompts
-- **CHAT**: Conversational chat templates
-- **INSTRUCT**: Instruction-based prompts
-- **FEWSHOT**: Few-shot learning templates
-- **CHAIN_OF_THOUGHT**: Step-by-step reasoning prompts
-- **ROLEPLAY**: Role-based interaction templates
-
-#### Template Components
-```python
-class PromptTemplate:
-    id: str                    # Unique identifier
-    name: str                  # Human-readable name
-    description: str           # Template purpose
-    template: str              # Template with {variables}
-    variables: List[str]       # Required variables list
-    type: PromptTemplateType   # Template category
-    category: str              # Grouping (qa, expert, code, etc.)
-    tags: List[str]           # Searchable tags
-    usage_count: int          # Analytics tracking
-    quality_score: float      # AI-evaluated quality (0-100)
-```
-
-#### Pre-built Templates
-The system includes 5 default templates:
-1. **基本的な質問応答** - Simple Q&A format
-2. **専門家ロールプレイ** - Expert role-based responses
-3. **段階的思考プロセス** - Chain of thought reasoning
-4. **Few-Shot学習** - Example-based learning
-5. **コード生成** - Programming task templates
-
-### Context Analysis Engine
-
-#### Analysis Metrics
-The ContextAnalyzer evaluates contexts across multiple dimensions:
-
-```python
-# Basic Metrics
-- total_elements: Number of context elements
-- total_tokens: Current token count
-- token_utilization: Percentage of max tokens used
-- avg_element_length: Average content length
-
-# Structure Analysis
-- element_type_distribution: Distribution of element types
-- priority_distribution: Priority level analysis
-- role_diversity: Variety of roles represented
-
-# Semantic Analysis (AI-powered)
-- semantic_consistency: How well ideas flow together
-- information_density: Information per token ratio
-- clarity_score: Readability assessment
-- relevance_mapping: Content relevance to purpose
-```
-
-#### Quality Assessment Process
-1. **Quantitative Analysis**: Token counts, distributions, ratios
-2. **AI Semantic Analysis**: Gemini 2.0 evaluates meaning and flow
-3. **Quality Scoring**: Combined score (0-100) with specific issues
-4. **Recommendations**: Actionable improvement suggestions
-
-### Optimization Strategies
-
-#### Multi-Goal Optimization
-The optimizer can target multiple goals simultaneously:
-
-```python
-# Available Optimization Goals
-- "reduce_tokens": Minimize token usage while preserving meaning
-- "improve_clarity": Enhance readability and understanding
-- "increase_relevance": Focus on most important information
-- "enhance_structure": Improve logical flow and organization
-- "boost_specificity": Add concrete details and examples
-```
-
-#### Optimization Process
-1. **Analysis Phase**: Comprehensive context evaluation
-2. **Strategy Selection**: AI chooses optimal approaches
-3. **Content Transformation**: Apply selected optimizations
-4. **Validation**: Ensure quality maintained or improved
-5. **Metrics Reporting**: Before/after comparison
-
-## Common Development Tasks
-
-### Adding New Template Types
-```python
-# In context_models.py
-class PromptTemplateType(Enum):
-    NEW_TYPE = "new_type"
-
-# In template_manager.py - _initialize_default_templates()
-{
-    "name": "New Template Type",
-    "description": "Description of the new template",
-    "template": "Template with {variables}",
-    "type": PromptTemplateType.NEW_TYPE,
-    "category": "category_name",
-    "tags": ["tag1", "tag2"]
-}
-```
-
-### Adding Analysis Metrics
-```python
-# In context_analyzer.py
-def _calculate_new_metric(self, window: ContextWindow) -> Dict[str, float]:
-    """Add new analysis metric"""
-    # Calculate your metric
-    return {"new_metric_name": metric_value}
-
-# Add to analyze_context_window()
-new_metrics = self._calculate_new_metric(window)
-analysis.metrics.update(new_metrics)
-```
-
-### Creating Optimization Strategies
-```python
-# In context_optimizer.py
-async def _optimize_for_new_goal(self, window: ContextWindow) -> Dict[str, Any]:
-    """New optimization strategy"""
-    # Implement optimization logic
-    return {
-        "optimized_elements": modified_elements,
-        "metrics": improvement_metrics,
-        "explanation": "What was changed and why"
-    }
-```
-
-### Adding MCP Tools
-```javascript
-// In context_mcp_server.js
-{
-  name: 'new_context_tool',
-  description: 'Description of what the tool does',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      window_id: { type: 'string', description: 'Context window ID' },
-      custom_param: { type: 'string', description: 'Custom parameter' }
-    },
-    required: ['window_id']
-  }
-}
-```
-
-### Development and Testing
 ```bash
-# Install development dependencies (included in requirements.txt)
-pip install -r requirements.txt
-
-# Run all tests
-pytest
-
-# Run with coverage
-pytest --cov=. --cov-report=html
-
-# Run specific test
-pytest tests/test_context_analyzer.py -v
-
-# Test MCP server
-./scripts/test-mcp.sh
+# Claude Code から直接実行
+gh issue create --title "機能追加: ユーザー認証" --body "JWT認証を実装"
 ```
 
-## Performance Optimization Tips
+または Claude Code のスラッシュコマンド:
 
-1. **Caching**: Implement Redis for template caching
-2. **Batch Operations**: Use bulk element addition
-3. **Async Processing**: Leverage asyncio for parallel operations
-4. **Token Estimation**: Pre-calculate before API calls
-5. **Connection Pooling**: Reuse HTTP connections
+```
+/create-issue
+```
 
-## Environment Variables
+### 状態確認
 
-### Required
-- `GEMINI_API_KEY`: Google Gemini API key
-
-### Optional
-- `UVICORN_HOST`: API host (default: 0.0.0.0)
-- `UVICORN_PORT`: API port (default: 8888/9001)
-- `LOG_LEVEL`: Logging level (default: info)
-- `CONTEXT_API_URL`: Context API URL for MCP (default: http://localhost:9001)
-- `AI_GUIDES_API_URL`: Guides API URL for MCP (default: http://localhost:8888)
-
-## Debugging Tips
-
-### Check Service Status
 ```bash
-# AI Guides API
-curl http://localhost:8888/health
-
-# Context Engineering API
-curl http://localhost:9001/api/stats
-
-# MCP Server (check Claude Desktop)
+npx miyabi status          # 現在の状態
+npx miyabi status --watch  # リアルタイム監視
 ```
 
-### Common Issues
-1. **Port conflicts**: Change ports in .env
-2. **API key errors**: Verify GEMINI_API_KEY
-3. **MCP not working**: Restart Claude Desktop
-4. **Optimization timeout**: Increase task timeout
+### Agent実行
 
-### Logging
-```python
-import logging
-logger = logging.getLogger(__name__)
-logger.info("Debug information here")
+```bash
+/agent-run                 # Claude Code から実行
 ```
 
-## Contributing Guidelines
+## カスタムスラッシュコマンド
 
-1. **Code Style**: Black for Python, ESLint for JS
-2. **Type Hints**: Required for all functions
-3. **Documentation**: Docstrings for all public methods
-4. **Tests**: Maintain >80% coverage
-5. **Commits**: Follow conventional commits
+Claude Code で以下のコマンドが使用可能:
 
-## Important Notes
+- `/test` - プロジェクト全体のテストを実行
+- `/generate-docs` - コードからドキュメント自動生成
+- `/create-issue` - Agent実行用Issueを対話的に作成
+- `/deploy` - デプロイ実行
+- `/verify` - システム動作確認（環境・コンパイル・テスト）
+- `/security-scan` - セキュリティ脆弱性スキャン実行
+- `/agent-run` - Autonomous Agent実行（Issue自動処理パイプライン）
 
-- Context windows have token limits (default 8192)
-- Optimization is compute-intensive (may take time)
-- Templates are cached for performance
-- WebSocket connections auto-reconnect
-- MCP tools work in stdio mode only
-- Gemini API has rate limits (60 RPM)
+## 識学理論（Shikigaku Theory）5原則
 
-## Future Enhancements
+1. **責任の明確化** - 各AgentがIssueに対する責任を負う
+2. **権限の委譲** - Agentは自律的に判断・実行可能
+3. **階層の設計** - CoordinatorAgent → 各専門Agent
+4. **結果の評価** - 品質スコア、カバレッジ、実行時間で評価
+5. **曖昧性の排除** - DAGによる依存関係明示、状態ラベルで進捗可視化
 
-- [ ] Cloud deployment (AWS/GCP)
-- [ ] Team collaboration features
-- [ ] Advanced caching strategies
-- [ ] Multi-language support
-- [ ] Export/import contexts
-- [ ] A/B testing for templates
+## 環境変数
+
+```bash
+# Gemini API Key（必須）
+GEMINI_API_KEY=your_gemini_api_key_here
+
+# GitHub Personal Access Token（必須）
+GITHUB_TOKEN=ghp_xxxxx
+
+# Anthropic API Key（Agent実行時）
+ANTHROPIC_API_KEY=sk-ant-xxxxx
+```
+
+## サポート
+
+- **Framework**: [Miyabi](https://github.com/ShunsukeHayashi/Autonomous-Operations)
+- **Documentation**: README.md
+- **Issues**: GitHub Issues で管理
+
+---
+
+🌸 **Miyabi** - Beauty in Autonomous Development
+
+*このファイルは Claude Code が自動的に参照します。プロジェクトの変更に応じて更新してください。*

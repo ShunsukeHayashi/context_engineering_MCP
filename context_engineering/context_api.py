@@ -95,11 +95,14 @@ class WebSocketManager:
 # グローバル変数
 sessions_storage: Dict[str, ContextSession] = {}
 websocket_manager = WebSocketManager()
+app_start_time: Optional[datetime] = None
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    global app_start_time
     # アプリケーション起動時
     logger.info("Context Engineering API Server starting...")
+    app_start_time = datetime.now()
     await initialize_components()
     yield
     # アプリケーション終了時
@@ -284,14 +287,36 @@ async def dashboard():
                 <div class="endpoint">POST /api/rag</div>
                 <div class="endpoint">POST /api/rag/{context_id}/analyze</div>
             </div>
+
+            <div class="feature">
+                <h3>💚 Health & Monitoring</h3>
+                <p>System health check and monitoring endpoints</p>
+                <div class="endpoint">GET /api/health</div>
+                <div class="endpoint">GET /api/stats</div>
+            </div>
         </div>
-        
+
         <div style="text-align: center; margin-top: 40px;">
             <p><a href="/docs">📚 API Documentation</a> | <a href="/ws">🔌 WebSocket Test</a></p>
         </div>
     </body>
     </html>
     """)
+
+# ヘルスチェック
+@app.get("/api/health")
+async def health_check() -> Dict[str, Any]:
+    """Health check endpoint for monitoring and orchestration"""
+    uptime_seconds = 0
+    if app_start_time:
+        uptime_seconds = int((datetime.now() - app_start_time).total_seconds())
+
+    return {
+        "status": "healthy",
+        "version": app.version,
+        "uptime": uptime_seconds,
+        "timestamp": datetime.now().isoformat()
+    }
 
 # セッション管理
 @app.post("/api/sessions")

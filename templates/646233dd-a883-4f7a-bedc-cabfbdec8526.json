@@ -1,0 +1,21 @@
+{
+  "id": "646233dd-a883-4f7a-bedc-cabfbdec8526",
+  "name": "Few-Shot学習",
+  "description": "例を示して同様のタスクを実行",
+  "template": "以下の例を参考に、同様のタスクを実行してください:\n\n{examples}\n\n新しいタスク: {task}\n回答:",
+  "variables": [
+    "examples",
+    "task"
+  ],
+  "type": "fewshot",
+  "category": "learning",
+  "tags": [
+    "few_shot",
+    "examples"
+  ],
+  "usage_count": 0,
+  "quality_score": 0.0,
+  "created_by": "system",
+  "created_at": "2026-01-08T06:10:23.593538",
+  "updated_at": "2026-01-08T06:10:23.593541"
+}

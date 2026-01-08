@@ -1,0 +1,17 @@
+{
+  "id": "f179c378-6f6d-4fae-b3a9-d6bb5d602a90",
+  "name": "List Test Template",
+  "description": "Test template for listing",
+  "template": "Test {variable}",
+  "variables": [
+    "variable"
+  ],
+  "type": "completion",
+  "category": "test",
+  "tags": [],
+  "usage_count": 0,
+  "quality_score": 0.0,
+  "created_by": "system",
+  "created_at": "2026-01-08T06:14:22.541425",
+  "updated_at": "2026-01-08T06:14:22.541429"
+}

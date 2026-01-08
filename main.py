@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, Union
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Query, Request, Depends
@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 
 # --- Data Source (Hardcoded for demonstration) ---
 
-AI_GUIDES_DATA: List[Dict[str, str | List[str]]] = [
+AI_GUIDES_DATA: List[Dict[str, Union[str, List[str]]]] = [
     {
         "title": "OpenAI: GPT Best Practices",
         "publisher": "OpenAI",
@@ -173,7 +173,7 @@ async def verify_api_key(request: Request):
 
 # --- Helper Functions ---
 
-def _find_guide_by_title(title: str) -> Optional[Dict[str, str | List[str]]]:
+def _find_guide_by_title(title: str) -> Optional[Dict[str, Union[str, List[str]]]]:
     """Finds an AI guide by its exact title (case-insensitive for comparison)."""
     for guide in AI_GUIDES_DATA:
         if guide["title"].lower() == title.lower():
@@ -191,10 +191,10 @@ async def health_check() -> Dict[str, str]:
 
 @app.get(
     "/guides",
-    response_model=List[Dict[str, str | List[str]]],
+    response_model=List[Dict[str, Union[str, List[str]]]],
     summary="List all AI guides"
 )
-async def list_ai_guides() -> List[Dict[str, str | List[str]]]:
+async def list_ai_guides() -> List[Dict[str, Union[str, List[str]]]]:
     """Lists all available AI guides with their titles, publishers, descriptions, and topics.
 
     Returns:
@@ -206,10 +206,10 @@ async def list_ai_guides() -> List[Dict[str, str | List[str]]]:
 
 @app.get(
     "/guides/search",
-    response_model=List[Dict[str, str | List[str]]],
+    response_model=List[Dict[str, Union[str, List[str]]]],
     summary="Search for AI guides"
 )
-async def search_ai_guides(query: str) -> List[Dict[str, str | List[str]]]:
+async def search_ai_guides(query: str) -> List[Dict[str, Union[str, List[str]]]]:
     """Searches for AI guides based on keywords or topics in their title or description.
 
     Args:
@@ -233,10 +233,10 @@ async def search_ai_guides(query: str) -> List[Dict[str, str | List[str]]]:
 
 @app.get(
     "/guides/{title}",
-    response_model=Dict[str, str | List[str]],
+    response_model=Dict[str, Union[str, List[str]]],
     summary="Get details of a specific AI guide"
 )
-async def get_ai_guide_details(title: str) -> Dict[str, str | List[str]]:
+async def get_ai_guide_details(title: str) -> Dict[str, Union[str, List[str]]]:
     """Retrieves the full details of a specific AI guide by its exact title.
 
     Args:
@@ -279,7 +279,7 @@ async def get_ai_guide_download_url(title: str) -> Dict[str, str]:
         logger.warning(f"AI guide not found for download URL: '{title}'.")
         raise HTTPException(status_code=404, detail="AI guide not found")
     
-    # The type hint `str | List[str]` on AI_GUIDES_DATA forces a check here
+    # The type hint `Union[str, List[str]]` on AI_GUIDES_DATA forces a check here
     download_url_value = guide.get("download_url")
     if isinstance(download_url_value, str):
         return {"download_url": download_url_value}

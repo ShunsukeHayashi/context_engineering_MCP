@@ -1,0 +1,21 @@
+{
+  "id": "5b30c9c6-d997-4ed0-b998-5618ce1c4efc",
+  "name": "Test Template",
+  "description": "A test template",
+  "template": "You are a {role} with {experience} years of experience.",
+  "variables": [
+    "experience",
+    "role"
+  ],
+  "type": "completion",
+  "category": "test",
+  "tags": [
+    "test",
+    "example"
+  ],
+  "usage_count": 0,
+  "quality_score": 0.0,
+  "created_by": "system",
+  "created_at": "2026-01-08T06:12:48.589923",
+  "updated_at": "2026-01-08T06:12:48.589961"
+}

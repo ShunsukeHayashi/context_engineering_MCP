@@ -1,0 +1,17 @@
+{
+  "id": "ccb94440-375e-49dc-b2e5-f6e088fd436f",
+  "name": "List Test Template",
+  "description": "Test template for listing",
+  "template": "Test {variable}",
+  "variables": [
+    "variable"
+  ],
+  "type": "completion",
+  "category": "test",
+  "tags": [],
+  "usage_count": 0,
+  "quality_score": 0.0,
+  "created_by": "system",
+  "created_at": "2026-01-08T06:15:16.298841",
+  "updated_at": "2026-01-08T06:15:16.298844"
+}

@@ -7,8 +7,8 @@ import google.generativeai as genai
 from collections import Counter
 import statistics
 
-from context_models import (
-    ContextWindow, ContextElement, ContextAnalysis, 
+from .context_models import (
+    ContextWindow, ContextElement, ContextAnalysis,
     ContextQuality, MultimodalContext, RAGContext
 )
 

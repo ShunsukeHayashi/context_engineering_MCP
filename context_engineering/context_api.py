@@ -15,13 +15,13 @@ sys.path.append('..')
 from security_config import security_config, security_middleware, get_security_headers, log_security_event
 import time
 
-from context_models import (
+from .context_models import (
     ContextWindow, ContextElement, ContextType, ContextSession,
     PromptTemplate, PromptTemplateType, MultimodalContext, RAGContext
 )
-from context_analyzer import ContextAnalyzer, MultimodalAnalyzer, RAGAnalyzer
-from template_manager import TemplateManager, ContextTemplateIntegrator
-from context_optimizer import ContextOptimizer
+from .context_analyzer import ContextAnalyzer, MultimodalAnalyzer, RAGAnalyzer
+from .template_manager import TemplateManager, ContextTemplateIntegrator
+from .context_optimizer import ContextOptimizer
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

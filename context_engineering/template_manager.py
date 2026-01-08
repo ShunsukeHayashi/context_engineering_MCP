@@ -6,7 +6,7 @@ from datetime import datetime
 import google.generativeai as genai
 from pathlib import Path
 
-from context_models import PromptTemplate, PromptTemplateType, ContextElement, ContextWindow
+from .context_models import PromptTemplate, PromptTemplateType, ContextElement, ContextWindow
 
 logger = logging.getLogger(__name__)
 

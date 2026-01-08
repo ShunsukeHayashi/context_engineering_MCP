@@ -1,0 +1,19 @@
+{
+  "id": "94d704e2-ce03-4c36-ac15-64bf184c0156",
+  "name": "Generated Template",
+  "description": "A generated template",
+  "template": "You are a {role} assistant.",
+  "variables": [
+    "role"
+  ],
+  "type": "completion",
+  "category": "general",
+  "tags": [
+    "ai-generated"
+  ],
+  "usage_count": 0,
+  "quality_score": 0.0,
+  "created_by": "ai_generated",
+  "created_at": "2026-01-08T06:16:36.696771",
+  "updated_at": "2026-01-08T06:16:36.696775"
+}

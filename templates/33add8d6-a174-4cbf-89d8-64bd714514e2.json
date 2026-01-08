@@ -1,0 +1,18 @@
+{
+  "id": "33add8d6-a174-4cbf-89d8-64bd714514e2",
+  "name": "Render Test",
+  "description": "Template for render testing",
+  "template": "Hello {name}, you are a {role}!",
+  "variables": [
+    "role",
+    "name"
+  ],
+  "type": "completion",
+  "category": "test",
+  "tags": [],
+  "usage_count": 1,
+  "quality_score": 0.0,
+  "created_by": "system",
+  "created_at": "2026-01-08T06:18:30.382719",
+  "updated_at": "2026-01-08T06:18:30.383868"
+}

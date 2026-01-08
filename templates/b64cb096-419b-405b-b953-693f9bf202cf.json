@@ -1,0 +1,21 @@
+{
+  "id": "b64cb096-419b-405b-b953-693f9bf202cf",
+  "name": "基本的な質問応答",
+  "description": "シンプルな質問応答用テンプレート",
+  "template": "質問: {question}\n\n以下の情報を参考に回答してください:\n{context}\n\n回答:",
+  "variables": [
+    "question",
+    "context"
+  ],
+  "type": "completion",
+  "category": "qa",
+  "tags": [
+    "basic",
+    "qa"
+  ],
+  "usage_count": 0,
+  "quality_score": 0.0,
+  "created_by": "system",
+  "created_at": "2026-01-08T06:10:23.593175",
+  "updated_at": "2026-01-08T06:10:23.593207"
+}

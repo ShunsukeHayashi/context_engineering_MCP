@@ -7,8 +7,8 @@ import google.generativeai as genai
 from collections import Counter
 import asyncio
 
-from context_models import (
-    ContextWindow, ContextElement, ContextType, OptimizationTask, 
+from .context_models import (
+    ContextWindow, ContextElement, ContextType, OptimizationTask,
     OptimizationStatus, ContextAnalysis
 )
 

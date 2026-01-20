@@ -1,0 +1,32 @@
+{
+  "id": "d30ebdc8-45ca-4b7a-a317-d6e0e7293271",
+  "name": "codex-agents-md-generator",
+  "description": "プロジェクト用のAGENTS.mdファイルを生成するためのテンプレート",
+  "template": "# AGENTS.md\n\n## Project Overview\n{project_name}: {project_description}\n\nTech Stack: {tech_stack}\n\n## Environment Setup\n```bash\n{setup_commands}\n```\n\n## Development Commands\n| Command | Description |\n|---------|-------------|\n{command_table}\n\n## Testing Guidelines\n{testing_guidelines}\n\n## Code Style & Conventions\n{code_conventions}\n\n## Git & PR Guidelines\n{git_guidelines}\n\n## Directory Structure\n```\n{directory_structure}\n```\n\n## Important Notes\n{important_notes}\n\n## Prohibited Actions\n{prohibited_actions}",
+  "variables": [
+    "project_description",
+    "project_name",
+    "code_conventions",
+    "testing_guidelines",
+    "important_notes",
+    "prohibited_actions",
+    "git_guidelines",
+    "command_table",
+    "directory_structure",
+    "tech_stack",
+    "setup_commands"
+  ],
+  "type": "instruct",
+  "category": "ai-agents",
+  "tags": [
+    "codex",
+    "openai",
+    "agents-md",
+    "project-setup"
+  ],
+  "usage_count": 0,
+  "quality_score": 0.0,
+  "created_by": "system",
+  "created_at": "2026-01-11T18:21:16.128783",
+  "updated_at": "2026-01-11T18:21:16.128820"
+}

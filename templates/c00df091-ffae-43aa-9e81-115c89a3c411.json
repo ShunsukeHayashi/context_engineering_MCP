@@ -1,0 +1,31 @@
+{
+  "id": "c00df091-ffae-43aa-9e81-115c89a3c411",
+  "name": "codex-task-delegation",
+  "description": "OpenAI Codexにタスクを効果的に委譲するためのプロンプトテンプレート",
+  "template": "## Task: {task_name}\n\n### Context\n{context_description}\n\n### Requirements\n{requirements}\n\n### Constraints\n- Language/Framework: {language_framework}\n- Code Style: {code_style}\n- Testing: {testing_requirements}\n\n### Expected Output\n{expected_output}\n\n### Additional Instructions\n{additional_instructions}\n\n### Files to Modify\n{target_files}\n\n### Do NOT\n{prohibited_actions}",
+  "variables": [
+    "code_style",
+    "prohibited_actions",
+    "requirements",
+    "task_name",
+    "context_description",
+    "expected_output",
+    "language_framework",
+    "target_files",
+    "testing_requirements",
+    "additional_instructions"
+  ],
+  "type": "instruct",
+  "category": "ai-agents",
+  "tags": [
+    "codex",
+    "openai",
+    "coding-agent",
+    "task-delegation"
+  ],
+  "usage_count": 0,
+  "quality_score": 0.0,
+  "created_by": "system",
+  "created_at": "2026-01-11T18:20:59.954916",
+  "updated_at": "2026-01-11T18:20:59.958271"
+}

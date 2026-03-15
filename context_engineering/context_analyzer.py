@@ -3,6 +3,7 @@ import re
 import json
 from typing import Dict, List, Any, Optional, Tuple
 from datetime import datetime
+import os
 import google.generativeai as genai
 from collections import Counter
 import statistics
@@ -19,7 +20,7 @@ class ContextAnalyzer:
     
     def __init__(self, gemini_api_key: str):
         genai.configure(api_key=gemini_api_key)
-        self.model = genai.GenerativeModel('gemini-2.0-flash-exp')
+        self.model = genai.GenerativeModel(os.getenv('GEMINI_MODEL', 'gemini-2.5-flash'))
         
     async def analyze_context_window(self, window: ContextWindow) -> ContextAnalysis:
         """コンテキストウィンドウの包括的分析"""
@@ -273,7 +274,7 @@ class MultimodalAnalyzer:
     
     def __init__(self, gemini_api_key: str):
         genai.configure(api_key=gemini_api_key)
-        self.model = genai.GenerativeModel('gemini-2.0-flash-exp')
+        self.model = genai.GenerativeModel(os.getenv('GEMINI_MODEL', 'gemini-2.5-flash'))
     
     async def analyze_multimodal_context(self, context: MultimodalContext) -> ContextAnalysis:
         """マルチモーダルコンテキストの分析"""
@@ -354,7 +355,7 @@ class RAGAnalyzer:
     
     def __init__(self, gemini_api_key: str):
         genai.configure(api_key=gemini_api_key)
-        self.model = genai.GenerativeModel('gemini-2.0-flash-exp')
+        self.model = genai.GenerativeModel(os.getenv('GEMINI_MODEL', 'gemini-2.5-flash'))
     
     async def analyze_rag_context(self, rag_context: RAGContext) -> ContextAnalysis:
         """RAGコンテキストの分析"""

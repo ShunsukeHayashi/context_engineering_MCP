@@ -3,6 +3,7 @@ import json
 import re
 from typing import Dict, List, Any, Optional, Tuple
 from datetime import datetime
+import os
 import google.generativeai as genai
 from collections import Counter
 import asyncio
@@ -19,7 +20,7 @@ class ContextOptimizer:
     
     def __init__(self, gemini_api_key: str):
         genai.configure(api_key=gemini_api_key)
-        self.model = genai.GenerativeModel('gemini-2.0-flash-exp')
+        self.model = genai.GenerativeModel(os.getenv('GEMINI_MODEL', 'gemini-2.5-flash'))
         self.optimization_tasks: Dict[str, OptimizationTask] = {}
     
     async def optimize_context_window(self, 

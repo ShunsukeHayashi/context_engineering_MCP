@@ -3,6 +3,7 @@ import json
 import re
 from typing import Dict, List, Any, Optional, Tuple
 from datetime import datetime
+import os
 import google.generativeai as genai
 from pathlib import Path
 
@@ -15,7 +16,7 @@ class TemplateManager:
     
     def __init__(self, gemini_api_key: str, storage_path: str = "templates"):
         genai.configure(api_key=gemini_api_key)
-        self.model = genai.GenerativeModel('gemini-2.0-flash-exp')
+        self.model = genai.GenerativeModel(os.getenv('GEMINI_MODEL', 'gemini-2.5-flash'))
         self.storage_path = Path(storage_path)
         self.storage_path.mkdir(exist_ok=True)
         self.templates: Dict[str, PromptTemplate] = {}

@@ -1,5 +1,5 @@
-import os
 import logging
+import os
 from typing import Dict, List, Optional, Any
 from dotenv import load_dotenv
 import google.generativeai as genai
@@ -20,7 +20,7 @@ class GeminiService:
         
         # Initialize model with grounding capabilities
         self.model = genai.GenerativeModel(
-            'gemini-2.0-flash-exp',
+            os.getenv('GEMINI_MODEL', 'gemini-2.5-flash'),
             generation_config={
                 "temperature": 0.7,
                 "top_p": 0.95,
@@ -129,7 +129,7 @@ class GeminiService:
                 "success": True,
                 "url": url,
                 "analysis": analysis,
-                "analyzed_with": "gemini-2.0-flash-exp"
+                "analyzed_with": os.getenv('GEMINI_MODEL', 'gemini-2.5-flash')
             }
             
         except Exception as e:

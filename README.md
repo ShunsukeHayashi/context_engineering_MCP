@@ -1,3 +1,5 @@
+[![Built by 合同会社みやび](https://img.shields.io/badge/Built%20by-合同会社みやび-blue?style=flat-square&logo=github)](https://miyabi-ai.jp)
+
 # 🧠 Context Engineering MCP Platform
 
 <div align="center">

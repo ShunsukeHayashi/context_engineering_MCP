@@ -2,6 +2,8 @@
 
 # 🧠 Context Engineering MCP Platform
 
+[English](./README.md) | [中文](./README_zh.md) | [日本語](./README_ja.md)
+
 <div align="center">
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)

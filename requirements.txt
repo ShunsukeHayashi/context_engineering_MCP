@@ -1,5 +1,5 @@
 # Core API dependencies
-fastapi==0.111.0
+fastapi==0.128.8
 uvicorn[standard]==0.29.0
 python-dotenv==1.0.0
 requests==2.32.3

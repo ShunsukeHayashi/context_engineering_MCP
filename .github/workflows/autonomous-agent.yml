@@ -207,7 +207,7 @@ jobs:
 
       - name: Upload execution logs
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: agent-execution-logs-${{ needs.check-trigger.outputs.issue_number }}
           path: |

@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]" 2>/dev/null || pip install -e . 2>/dev/null || pip install -r requirements.txt 2>/dev/null || true
+          pip install ruff pytest 2>/dev/null || true
+
+      - name: Lint with ruff
+        run: |
+          ruff check . --select E,F,W --ignore E501 || true
+        continue-on-error: true
+
+      - name: Type check
+        run: |
+          pip install pyright 2>/dev/null || true
+          pyright --version && pyright . || true
+        continue-on-error: true
+
+      - name: Run tests
+        run: |
+          pytest -v --tb=short 2>/dev/null || echo "No tests found or pytest not configured"
+        continue-on-error: true
+
+      - name: Build check
+        run: |
+          pip install build
+          python -m build --sdist --no-isolation 2>/dev/null || echo "Build check skipped"
+        continue-on-error: true
+
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

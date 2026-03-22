@@ -7,7 +7,7 @@ pydantic==2.10.3
 
 # AI/ML dependencies
 google-generativeai==0.8.3
-google-ai-generativelanguage==0.6.10
+google-ai-generativelanguage==0.10.0
 
 # Context Engineering specific dependencies
 websockets==12.0

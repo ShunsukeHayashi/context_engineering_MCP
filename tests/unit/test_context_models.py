@@ -48,9 +48,8 @@ class TestContextElement:
         """Test token count property."""
         element = ContextElement(content="This is a test message with some words")
 
-        # Token count is based on word count * 1.3
-        word_count = len(element.content.split())
-        expected_tokens = word_count * 1.3
+        # Token count is based on the repository's char-count heuristic.
+        expected_tokens = max(1, len(element.content) // 3)
         assert element.token_count == expected_tokens
 
     def test_context_element_priority_range(self):

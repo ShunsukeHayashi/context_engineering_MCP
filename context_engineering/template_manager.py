@@ -7,17 +7,18 @@ import os
 import google.generativeai as genai
 from pathlib import Path
 
-from .context_models import PromptTemplate, PromptTemplateType, ContextElement, ContextWindow
+from .context_models import PromptTemplate, PromptTemplateType, ContextElement, ContextWindow, ContextType
 
 logger = logging.getLogger(__name__)
 
 class TemplateManager:
     """プロンプトテンプレート管理システム"""
     
-    def __init__(self, gemini_api_key: str, storage_path: str = "templates"):
+    def __init__(self, gemini_api_key: str, storage_path: Optional[str] = None):
         genai.configure(api_key=gemini_api_key)
         self.model = genai.GenerativeModel(os.getenv('GEMINI_MODEL', 'gemini-2.5-flash'))
-        self.storage_path = Path(storage_path)
+        resolved_storage_path = storage_path or os.getenv("CONTEXT_TEMPLATE_STORAGE_PATH", "templates")
+        self.storage_path = Path(resolved_storage_path)
         self.storage_path.mkdir(exist_ok=True)
         self.templates: Dict[str, PromptTemplate] = {}
         self._load_templates()

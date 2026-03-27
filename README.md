@@ -398,7 +398,7 @@ Or use the API directly:
 
 ```bash
 # Create a session
-curl -X POST http://localhost:9001/api/sessions \
+curl -X POST http://localhost:9003/api/sessions \
   -H "Content-Type: application/json" \
   -d '{"name": "My First Session"}'
 
@@ -407,6 +407,42 @@ curl -X POST http://localhost:9001/api/sessions \
 ```
 
 **🎉 That's it! You're now optimizing AI contexts like a pro!**
+
+## 🔁 Quality Improvement Cycle
+
+The planning pipeline only gets to 8+/10 if runtime drift and regressions are caught automatically.
+This repository now includes a repeatable quality cycle built around runtime health checks and Agent Skill Bus telemetry.
+
+### What it checks
+
+- **Canonical runtime path**: confirms Codex MCP config points to the canonical `platform/_mcp/context_engineering_MCP` path
+- **Live API health**: verifies `GET /api/health` returns `status=healthy`
+- **MCP syntax**: validates `mcp-server/context_mcp_server.js`
+- **Python tests**: runs unit and API integration tests
+- **Skill telemetry**: records each cycle result into a hidden Agent Skill Bus workspace
+
+### Commands
+
+```bash
+# Validate runtime drift only
+npm run health:runtime
+
+# Fail fast on drift, syntax, or smoke tests
+npm run quality:check
+
+# Run the full cycle and record it to Agent Skill Bus
+npm run quality:cycle
+```
+
+`quality:check` and `quality:cycle` intentionally use a smoke suite instead of the repository-wide coverage gate.
+This keeps the operational planning loop focused on runtime correctness, not on unrelated coverage debt.
+
+### Why this raises the score
+
+- It removes **source-of-truth drift** by checking Codex config against the canonical runtime path
+- It adds **repeatable error detection** instead of relying on ad-hoc manual checks
+- It creates a **feedback loop** through Agent Skill Bus so quality trends can be observed over time
+- It keeps telemetry out of git by writing to `.agent-skill-bus-workspace/`
 
 ## 📚 Use Cases & Examples
 

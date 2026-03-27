@@ -44,34 +44,37 @@ def client():
     """Create a test client with mocked dependencies."""
     import os
     import asyncio
+    import tempfile
 
     # Set dummy API key for testing
     os.environ['GEMINI_API_KEY'] = 'test-api-key-for-testing'
+    with tempfile.TemporaryDirectory() as temp_templates_dir:
+        os.environ['CONTEXT_TEMPLATE_STORAGE_PATH'] = temp_templates_dir
 
-    with patch('google.generativeai.configure'), \
-         patch('google.generativeai.GenerativeModel') as mock_model:
+        with patch('google.generativeai.configure'), \
+             patch('google.generativeai.GenerativeModel') as mock_model:
 
-        # Mock the Gemini model - return sync mock with comprehensive response
-        mock_response = MagicMock()
-        mock_response.text = MOCK_AI_RESPONSE
+            # Mock the Gemini model - return sync mock with comprehensive response
+            mock_response = MagicMock()
+            mock_response.text = MOCK_AI_RESPONSE
 
-        mock_instance = MagicMock()
-        mock_instance.generate_content.return_value = mock_response
-        mock_instance.generate_content_async = AsyncMock(return_value=mock_response)
-        mock_model.return_value = mock_instance
+            mock_instance = MagicMock()
+            mock_instance.generate_content.return_value = mock_response
+            mock_instance.generate_content_async = AsyncMock(return_value=mock_response)
+            mock_model.return_value = mock_instance
 
-        from context_engineering.context_api import app, initialize_components
+            from context_engineering.context_api import app, initialize_components
 
-        # Initialize components that are normally initialized during lifespan
-        try:
-            asyncio.get_event_loop().run_until_complete(initialize_components())
-        except RuntimeError:
-            # Create new event loop if none exists
+            # Initialize components that are normally initialized during lifespan
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
-            loop.run_until_complete(initialize_components())
+            try:
+                loop.run_until_complete(initialize_components())
+            finally:
+                loop.close()
+                asyncio.set_event_loop(None)
 
-        yield TestClient(app)
+            yield TestClient(app)
 
 
 class TestSessionManagement:
@@ -91,6 +94,20 @@ class TestSessionManagement:
         assert data["description"] == "Test description"
         assert "session_id" in data
         assert "created_at" in data
+
+    @pytest.mark.api
+    def test_create_session_with_json_body(self, client):
+        """Test creating a new context session from JSON body."""
+        response = client.post(
+            "/api/sessions",
+            json={"name": "Body Session", "description": "Body description"}
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["name"] == "Body Session"
+        assert data["description"] == "Body description"
+        assert "session_id" in data
     
     @pytest.mark.api
     def test_list_sessions(self, client):
@@ -453,6 +470,17 @@ class TestSystemEndpoints:
     """Test system and utility endpoints."""
     
     @pytest.mark.api
+    def test_health_endpoint(self, client):
+        """Test health endpoint."""
+        response = client.get("/api/health")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "healthy"
+        assert "version" in data
+        assert "uptime" in data
+
+    @pytest.mark.api
     def test_get_stats(self, client):
         """Test system statistics endpoint."""
         response = client.get("/api/stats")
@@ -477,6 +505,42 @@ class TestSystemEndpoints:
         assert response.status_code == 200
         assert "text/html" in response.headers["content-type"]
 
+    @pytest.mark.api
+    def test_multimodal_endpoint(self, client):
+        response = client.post(
+            "/api/multimodal",
+            json={
+                "text_content": "describe this image",
+                "image_urls": ["https://example.com/image.png"],
+                "document_urls": ["https://example.com/doc.pdf"],
+            },
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert "context_id" in data
+        assert data["modality_count"] == 3
+
+    @pytest.mark.api
+    def test_rag_endpoint(self, client):
+        response = client.post(
+            "/api/rag",
+            json={
+                "query": "pricing policy",
+                "documents": [
+                    {"content": "pricing details"},
+                    {"content": "billing details"},
+                ],
+                "max_tokens": 64,
+            },
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["query"] == "pricing policy"
+        assert data["retrieved_count"] == 2
+        assert "synthesized_context" in data
+
 
 class TestErrorHandling:
     """Test API error handling and edge cases."""
@@ -488,12 +552,44 @@ class TestErrorHandling:
         
         assert response.status_code == 404
         assert "error" in response.json() or "detail" in response.json()
+
+    @pytest.mark.api
+    def test_create_window_for_missing_session(self, client):
+        response = client.post("/api/sessions/missing/windows", json={"max_tokens": 128})
+
+        assert response.status_code == 404
     
     @pytest.mark.api
     def test_invalid_window_id(self, client):
         """Test handling of invalid window IDs."""
         response = client.get("/api/contexts/invalid-window-id")
         
+        assert response.status_code == 404
+
+    @pytest.mark.api
+    def test_add_context_element_token_overflow(self, client):
+        session_response = client.post("/api/sessions", params={"name": "Overflow Test"})
+        session_id = session_response.json()["session_id"]
+        window_response = client.post(
+            f"/api/sessions/{session_id}/windows",
+            json={"max_tokens": 1, "reserved_tokens": 0},
+        )
+        window_id = window_response.json()["window_id"]
+
+        response = client.post(
+            f"/api/contexts/{window_id}/elements",
+            json={"content": "This definitely exceeds the one token limit", "type": "user"},
+        )
+
+        assert response.status_code == 400
+
+    @pytest.mark.api
+    def test_render_template_missing_returns_not_found(self, client):
+        response = client.post(
+            "/api/templates/missing/render",
+            json={"template_id": "missing", "variables": {}},
+        )
+
         assert response.status_code == 404
     
     @pytest.mark.api
@@ -562,24 +658,32 @@ class TestAPIPerformance:
         """Test handling of multiple concurrent session creations."""
         import threading
         import time
+        from context_engineering.context_api import security_middleware
         
         results = []
+        original_rate_limit = security_middleware.config.rate_limit_rpm
+        security_middleware.rate_limit_store.clear()
+        security_middleware.config.rate_limit_rpm = max(original_rate_limit, 1000)
         
-        def create_session(index):
-            response = client.post("/api/sessions", params={"name": f"Concurrent {index}"})
-            results.append(response.status_code)
-        
-        # Create 10 concurrent sessions
-        threads = []
-        for i in range(10):
-            thread = threading.Thread(target=create_session, args=(i,))
-            threads.append(thread)
-            thread.start()
-        
-        # Wait for all threads to complete
-        for thread in threads:
-            thread.join()
-        
-        # All should succeed
-        assert all(status == 200 for status in results)
-        assert len(results) == 10
+        try:
+            def create_session(index):
+                response = client.post("/api/sessions", params={"name": f"Concurrent {index}"})
+                results.append(response.status_code)
+            
+            # Create 10 concurrent sessions
+            threads = []
+            for i in range(10):
+                thread = threading.Thread(target=create_session, args=(i,))
+                threads.append(thread)
+                thread.start()
+            
+            # Wait for all threads to complete
+            for thread in threads:
+                thread.join()
+            
+            # All should succeed
+            assert all(status == 200 for status in results)
+            assert len(results) == 10
+        finally:
+            security_middleware.config.rate_limit_rpm = original_rate_limit
+            security_middleware.rate_limit_store.clear()

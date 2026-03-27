@@ -52,6 +52,8 @@ class ContextElement:
         """簡易トークン数推定（日本語・英語混合対応）"""
         # 日本語は文字ベースで推定（1文字≈0.5トークン）、英語は単語ベース
         # 混合テキストは文字数÷3で近似
+        if not self.content:
+            return 0
         return max(1, len(self.content) // 3)
     
     def to_dict(self) -> Dict[str, Any]:

@@ -22,7 +22,13 @@ class TemplateManager:
         self.templates: Dict[str, PromptTemplate] = {}
         self._load_templates()
         self._initialize_default_templates()
-    
+
+    def _extract_json_from_response(self, text: str) -> dict:
+        """GeminiのmarkdownラップJSONを安全にパース"""
+        cleaned = re.sub(r'```json\s*', '', text)
+        cleaned = re.sub(r'```\s*', '', cleaned)
+        return json.loads(cleaned.strip())
+
     def _load_templates(self):
         """保存されたテンプレートを読み込み"""
         template_files = self.storage_path.glob("*.json")
@@ -283,8 +289,8 @@ class TemplateManager:
         
         try:
             response = self.model.generate_content(prompt)
-            data = json.loads(response.text)
-            
+            data = self._extract_json_from_response(response.text)
+
             template = PromptTemplate(
                 name=data["name"],
                 description=data["description"],
@@ -342,8 +348,8 @@ class TemplateManager:
         
         try:
             response = self.model.generate_content(prompt)
-            result = json.loads(response.text)
-            
+            result = self._extract_json_from_response(response.text)
+
             # 品質スコアを更新
             scores = result["current_score"]
             overall_score = sum(scores.values()) / len(scores)

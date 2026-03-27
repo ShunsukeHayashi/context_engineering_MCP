@@ -49,8 +49,10 @@ class ContextElement:
     
     @property
     def token_count(self) -> int:
-        """簡易トークン数推定"""
-        return len(self.content.split()) * 1.3  # 概算
+        """簡易トークン数推定（日本語・英語混合対応）"""
+        # 日本語は文字ベースで推定（1文字≈0.5トークン）、英語は単語ベース
+        # 混合テキストは文字数÷3で近似
+        return max(1, len(self.content) // 3)
     
     def to_dict(self) -> Dict[str, Any]:
         return {

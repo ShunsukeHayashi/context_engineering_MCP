@@ -3,7 +3,7 @@ import json
 import logging
 from typing import Dict, List, Any, Optional
 from datetime import datetime
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, UploadFile, File, Request, Depends
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, UploadFile, File, Request, Depends, Body
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -38,6 +38,10 @@ class ContextElementRequest(BaseModel):
 class ContextWindowRequest(BaseModel):
     max_tokens: int = 8192
     reserved_tokens: int = 512
+
+class ContextSessionRequest(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
 
 class TemplateRequest(BaseModel):
     name: str
@@ -320,9 +324,16 @@ async def health_check() -> Dict[str, Any]:
 
 # セッション管理
 @app.post("/api/sessions")
-async def create_session(name: str = "New Session", description: str = "") -> Dict[str, Any]:
+async def create_session(
+    body: Optional[ContextSessionRequest] = Body(default=None),
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+) -> Dict[str, Any]:
     """新しいコンテキストセッションを作成"""
-    session = ContextSession(name=name, description=description)
+    session_name = (body.name if body and body.name is not None else name) or "New Session"
+    session_description = (body.description if body and body.description is not None else description) or ""
+
+    session = ContextSession(name=session_name, description=session_description)
     sessions_storage[session.id] = session
     
     await websocket_manager.broadcast({
@@ -539,6 +550,8 @@ async def render_template(template_id: str, request: TemplateRenderRequest) -> D
             raise HTTPException(status_code=404, detail="Template not found")
         
         return {"rendered_content": rendered}
+    except HTTPException:
+        raise
         
     except Exception as e:
         logger.error(f"Template rendering failed: {str(e)}")

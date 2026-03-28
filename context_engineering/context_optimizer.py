@@ -22,7 +22,13 @@ class ContextOptimizer:
         genai.configure(api_key=gemini_api_key)
         self.model = genai.GenerativeModel(os.getenv('GEMINI_MODEL', 'gemini-2.5-flash'))
         self.optimization_tasks: Dict[str, OptimizationTask] = {}
-    
+
+    def _extract_json_from_response(self, text: str) -> dict:
+        """GeminiのmarkdownラップJSONを安全にパース"""
+        cleaned = re.sub(r'```json\s*', '', text)
+        cleaned = re.sub(r'```\s*', '', cleaned)
+        return json.loads(cleaned.strip())
+
     async def optimize_context_window(self, 
                                     window: ContextWindow, 
                                     optimization_goals: List[str],
@@ -565,8 +571,8 @@ class ContextOptimizer:
         
         try:
             response = self.model.generate_content(analysis_prompt)
-            recommendations = json.loads(response.text)
-            
+            recommendations = self._extract_json_from_response(response.text)
+
             # 推奨された最適化を実行
             task = await self.optimize_context_window(
                 window,

@@ -22,6 +22,12 @@ class ContextAnalyzer:
         genai.configure(api_key=gemini_api_key)
         self.model = genai.GenerativeModel(os.getenv('GEMINI_MODEL', 'gemini-2.5-flash'))
         
+    def _extract_json_from_response(self, text: str) -> dict:
+        """GeminiのmarkdownラップJSONを安全にパース"""
+        cleaned = re.sub(r'```json\s*', '', text)
+        cleaned = re.sub(r'```\s*', '', cleaned)
+        return json.loads(cleaned.strip())
+
     async def analyze_context_window(self, window: ContextWindow) -> ContextAnalysis:
         """コンテキストウィンドウの包括的分析"""
         
@@ -150,10 +156,10 @@ class ContextAnalyzer:
             """
             
             response = self.model.generate_content(prompt)
-            result = json.loads(response.text)
-            
+            result = self._extract_json_from_response(response.text)
+
             return result
-            
+
         except Exception as e:
             logger.error(f"Semantic analysis failed: {str(e)}")
             return {
@@ -417,8 +423,8 @@ class RAGAnalyzer:
             """
             
             response = self.model.generate_content(prompt)
-            return json.loads(response.text)
-            
+            return self._extract_json_from_response(response.text)
+
         except Exception as e:
             logger.error(f"RAG relevance analysis failed: {str(e)}")
             return {

@@ -30,23 +30,60 @@ class ContextEngineeringMCPServer {
   }
 
   async makeRequest(baseUrl, endpoint, options = {}) {
+    const timeoutMs = options.timeoutMs ?? 30000;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
     try {
       const url = `${baseUrl}${endpoint}`;
       const response = await fetch(url, {
         ...options,
+        signal: controller.signal,
         headers: {
           'Content-Type': 'application/json',
           ...options.headers,
         },
       });
 
-      if (!response.ok) {
-        throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+      const rawText = await response.text();
+      let parsedBody = null;
+      if (rawText) {
+        try {
+          parsedBody = JSON.parse(rawText);
+        } catch {
+          parsedBody = null;
+        }
       }
 
-      return await response.json();
+      if (!response.ok) {
+        const detail =
+          parsedBody?.detail ||
+          parsedBody?.message ||
+          parsedBody?.error ||
+          rawText.trim();
+        throw new Error(
+          `API request failed: ${response.status} ${response.statusText}${
+            detail ? ` - ${detail}` : ''
+          }`
+        );
+      }
+
+      if (parsedBody !== null) {
+        return parsedBody;
+      }
+
+      if (!rawText.trim()) {
+        return {};
+      }
+
+      throw new Error(`API response was not valid JSON for ${endpoint}`);
     } catch (error) {
+      if (error.name === 'AbortError') {
+        throw new Error(`Request failed: timeout after ${timeoutMs}ms for ${endpoint}`);
+      }
       throw new Error(`Request failed: ${error.message}`);
+    } finally {
+      clearTimeout(timeoutId);
     }
   }
 

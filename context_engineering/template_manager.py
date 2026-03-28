@@ -7,22 +7,29 @@ import os
 import google.generativeai as genai
 from pathlib import Path
 
-from .context_models import PromptTemplate, PromptTemplateType, ContextElement, ContextWindow
+from .context_models import PromptTemplate, PromptTemplateType, ContextElement, ContextWindow, ContextType
 
 logger = logging.getLogger(__name__)
 
 class TemplateManager:
     """プロンプトテンプレート管理システム"""
     
-    def __init__(self, gemini_api_key: str, storage_path: str = "templates"):
+    def __init__(self, gemini_api_key: str, storage_path: Optional[str] = None):
         genai.configure(api_key=gemini_api_key)
         self.model = genai.GenerativeModel(os.getenv('GEMINI_MODEL', 'gemini-2.5-flash'))
-        self.storage_path = Path(storage_path)
+        resolved_storage_path = storage_path or os.getenv("CONTEXT_TEMPLATE_STORAGE_PATH", "templates")
+        self.storage_path = Path(resolved_storage_path)
         self.storage_path.mkdir(exist_ok=True)
         self.templates: Dict[str, PromptTemplate] = {}
         self._load_templates()
         self._initialize_default_templates()
-    
+
+    def _extract_json_from_response(self, text: str) -> dict:
+        """GeminiのmarkdownラップJSONを安全にパース"""
+        cleaned = re.sub(r'```json\s*', '', text)
+        cleaned = re.sub(r'```\s*', '', cleaned)
+        return json.loads(cleaned.strip())
+
     def _load_templates(self):
         """保存されたテンプレートを読み込み"""
         template_files = self.storage_path.glob("*.json")
@@ -283,8 +290,8 @@ class TemplateManager:
         
         try:
             response = self.model.generate_content(prompt)
-            data = json.loads(response.text)
-            
+            data = self._extract_json_from_response(response.text)
+
             template = PromptTemplate(
                 name=data["name"],
                 description=data["description"],
@@ -342,8 +349,8 @@ class TemplateManager:
         
         try:
             response = self.model.generate_content(prompt)
-            result = json.loads(response.text)
-            
+            result = self._extract_json_from_response(response.text)
+
             # 品質スコアを更新
             scores = result["current_score"]
             overall_score = sum(scores.values()) / len(scores)

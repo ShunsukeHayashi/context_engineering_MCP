@@ -5,7 +5,7 @@ import hashlib
 from typing import Dict, List, Optional
 from cryptography.fernet import Fernet
 import jwt
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 class SecurityConfig:
     """Centralized security configuration and utilities"""
@@ -49,8 +49,8 @@ class SecurityConfig:
         """Generate a JWT token for authentication"""
         payload = {
             'user_id': user_id,
-            'exp': datetime.utcnow() + timedelta(seconds=self.session_timeout),
-            'iat': datetime.utcnow(),
+            'exp': datetime.now(UTC) + timedelta(seconds=self.session_timeout),
+            'iat': datetime.now(UTC),
             'iss': 'context-engineering-mcp'
         }
         
@@ -119,7 +119,7 @@ class SecurityMiddleware:
         
     async def rate_limit_check(self, client_id: str) -> bool:
         """Check if client is within rate limits"""
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         minute_key = now.strftime('%Y-%m-%d-%H-%M')
         
         key = f"{client_id}:{minute_key}"
@@ -179,7 +179,7 @@ def log_security_event(event_type: str, details: Dict, severity: str = 'INFO'):
     
     log_entry = {
         'event_type': event_type,
-        'timestamp': datetime.utcnow().isoformat(),
+        'timestamp': datetime.now(UTC).isoformat(),
         'severity': severity,
         'details': details
     }

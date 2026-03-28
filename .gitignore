@@ -48,6 +48,9 @@ yarn-error.log*
 # Logs
 *.log
 server.log
+.coverage
+coverage.xml
+htmlcov/
 
 # OS
 .DS_Store
@@ -56,6 +59,7 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.temp
+.agent-skill-bus-workspace/
 
 # Database
 *.db

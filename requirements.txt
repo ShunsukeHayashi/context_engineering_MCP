@@ -3,7 +3,7 @@ fastapi==0.128.8
 uvicorn[standard]==0.29.0
 python-dotenv==1.0.0
 requests==2.32.3
-pydantic==2.10.3
+pydantic==2.12.5
 
 # AI/ML dependencies
 google-generativeai==0.8.3

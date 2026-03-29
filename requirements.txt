@@ -12,7 +12,7 @@ google-ai-generativelanguage==0.10.0
 # Context Engineering specific dependencies
 websockets==15.0.1
 python-multipart==0.0.20
-aiofiles==23.2.1
+aiofiles==25.1.0
 
 # Security dependencies
 cryptography>=41.0.0

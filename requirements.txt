@@ -22,7 +22,7 @@ slowapi>=0.1.9
 python-jose[cryptography]>=3.3.0
 
 # Development and testing
-pytest==7.4.0
+pytest==8.4.2
 pytest-asyncio==1.2.0
 pytest-cov==4.1.0
 pytest-mock==3.15.1
